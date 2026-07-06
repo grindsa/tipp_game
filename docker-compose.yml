@@ -1,5 +1,5 @@
 services:
-  tgdb:
+  db:
     image: mariadb:11
     restart: unless-stopped
     environment:
@@ -71,6 +71,6 @@ volumes:
 networks:
   tg-internal:
     internal: true
-  tg:
+  proxy:
     external: true # Tells Docker Compose this network already exists
 
