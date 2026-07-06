@@ -25,9 +25,15 @@ if not SECRET_KEY:
 # Keep development convenient, but default to safe values in production.
 DEBUG = env_bool('DJANGO_DEBUG', default=(not IS_PRODUCTION))
 
-# Reads the string and splits it into a list: ['yourdomain.com', 'web']
-allowed_hosts_default = 'localhost,127.0.0.1,web' if DEBUG else ''
-ALLOWED_HOSTS = [host.strip() for host in os.environ.get('DJANGO_ALLOWED_HOSTS', allowed_hosts_default).split(',') if host.strip()]
+# In development/non-production allow any host.
+if IS_PRODUCTION:
+    ALLOWED_HOSTS = [
+        host.strip()
+        for host in os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',')
+        if host.strip()
+    ]
+else:
+    ALLOWED_HOSTS = ['*']
 
 # TEMPLATE_DEBUG = True
 TEMPLATES = [
