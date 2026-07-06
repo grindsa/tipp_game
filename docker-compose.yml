@@ -21,6 +21,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    user: "${APP_UID}:${APP_GID}"
     restart: unless-stopped
     ports:
       - "8000:8000"
