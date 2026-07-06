@@ -6,9 +6,21 @@ import os
 from django.core.exceptions import ImproperlyConfigured
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 AUTH_LOG_DIR = os.path.join(BASE_DIR, 'logs')
+AUTH_LOG_FILE = os.path.join(AUTH_LOG_DIR, 'auth.log')
+AUTH_LOG_TO_FILE = True
 
-# Ensure the auth log directory exists so file logging can initialize.
-os.makedirs(AUTH_LOG_DIR, exist_ok=True)
+# Try to initialize the auth log path. If host volume permissions block writes,
+# fall back to console logging so the app can still boot.
+try:
+    os.makedirs(AUTH_LOG_DIR, exist_ok=True)
+    with open(AUTH_LOG_FILE, 'a', encoding='utf-8') as auth_log_probe:
+        auth_log_probe.write('')
+except OSError:
+    AUTH_LOG_TO_FILE = False
+
+AUTH_FAILURE_LOGGER_HANDLERS = ['auth_failures_console']
+if AUTH_LOG_TO_FILE:
+    AUTH_FAILURE_LOGGER_HANDLERS.insert(0, 'auth_failures_file')
 
 
 def env_bool(name, default=False):
@@ -182,12 +194,18 @@ LOGGING = {
 			'filters': ['require_debug_false'],
 			'class': 'django.utils.log.AdminEmailHandler'
         },
+        'auth_failures_console': {
+            'level': 'WARNING',
+            'class': 'logging.StreamHandler',
+            'formatter': 'auth.fail2ban',
+        },
         'auth_failures_file': {
             'level': 'WARNING',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': os.path.join(AUTH_LOG_DIR, 'auth.log'),
+            'filename': AUTH_LOG_FILE,
             'maxBytes': 10485760,
             'backupCount': 5,
+            'delay': True,
             'formatter': 'auth.fail2ban',
 		}
 	},
@@ -202,7 +220,7 @@ LOGGING = {
 			'propagate': False,
         },
         'auth_failures': {
-            'handlers': ['auth_failures_file', 'console'],
+            'handlers': AUTH_FAILURE_LOGGER_HANDLERS,
             'level': 'WARNING',
             'propagate': False,
 		}
