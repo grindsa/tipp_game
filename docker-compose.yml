@@ -30,6 +30,7 @@ services:
       - tg_media_volume:/app/media
       - /srv/data/tipp_game/logs:/app/logs
     environment:
+      HOME: /tmp
       DJANGO_ENV: ${DJANGO_ENV:-development}
       DJANGO_SETTINGS_MODULE: tipp_game.settings
       DB_NAME: ${MARIADB_DATABASE}
