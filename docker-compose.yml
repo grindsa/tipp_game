@@ -34,7 +34,7 @@ services:
       DB_NAME: ${MARIADB_DATABASE}
       DB_USER: ${MARIADB_USER}
       DB_PASSWORD: ${MARIADB_PASSWORD}
-      DB_HOST: tgdb
+      DB_HOST: db
       WB_NAME: ${WB_DATABASE}
       WB_USER: ${WB_USER}
       WB_PASSWORD: ${WB_PASSWORD}
@@ -58,9 +58,9 @@ services:
       OTP_TOTP_ISSUER: ${OTP_TOTP_ISSUER}
     networks:
       - tg-internal
-      - tg
+      - proxy
     depends_on:
-      tgdb:
+      db:
         condition: service_healthy
 
 volumes:
