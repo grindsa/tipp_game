@@ -5,6 +5,10 @@ Django settings for tipp_game project.
 import os
 from django.core.exceptions import ImproperlyConfigured
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+AUTH_LOG_DIR = os.path.join(BASE_DIR, 'logs')
+
+# Ensure the auth log directory exists so file logging can initialize.
+os.makedirs(AUTH_LOG_DIR, exist_ok=True)
 
 
 def env_bool(name, default=False):
@@ -76,7 +80,7 @@ INSTALLED_APPS = (
     'django_otp',
     'django_otp.plugins.otp_totp',
     'game',
-    'userauth',
+    'userauth.apps.UserauthConfig',
     'captcha',
     'article',
     'trgw',
@@ -151,7 +155,11 @@ LOGGING = {
 		'django.server': {
 			'()': 'django.utils.log.ServerFormatter',
 			'format': '[%(server_time)s] %(message)s',
-		}
+        },
+        'auth.fail2ban': {
+            'format': '%(asctime)s %(message)s',
+            'datefmt': '%Y-%m-%dT%H:%M:%S%z',
+        }
 	},
 	'handlers': {
 		'console': {
@@ -173,6 +181,14 @@ LOGGING = {
 			'level': 'ERROR',
 			'filters': ['require_debug_false'],
 			'class': 'django.utils.log.AdminEmailHandler'
+        },
+        'auth_failures_file': {
+            'level': 'WARNING',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(AUTH_LOG_DIR, 'auth.log'),
+            'maxBytes': 10485760,
+            'backupCount': 5,
+            'formatter': 'auth.fail2ban',
 		}
 	},
 	'loggers': {
@@ -184,6 +200,11 @@ LOGGING = {
 			'handlers': ['django.server'],
 			'level': 'INFO',
 			'propagate': False,
+        },
+        'auth_failures': {
+            'handlers': ['auth_failures_file', 'console'],
+            'level': 'WARNING',
+            'propagate': False,
 		}
 	}
 }

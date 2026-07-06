@@ -27,6 +27,7 @@ services:
     volumes:
       - tg_static_volume:/app/static
       - tg_media_volume:/app/media
+      - /srv/data/tipp_game/logs:/app/logs
     environment:
       DJANGO_ENV: ${DJANGO_ENV:-development}
       DJANGO_SETTINGS_MODULE: tipp_game.settings
