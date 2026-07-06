@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}Tippspiel|Tipps pro Spieltag{% endblock %}
+
+{% block content %}
+
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+<div class="w3-col w96percent">
+{% endif %}
+
+<div class="w3-container w3-padding-small ehc-blue-2 w3-margin-top w3-margin-bottom w3-center"><h1>Tipps pro Spieltag</h1></div>
+<form class="formformat center w3-center" action="/game/tpd" method="get" accept-charset="utf-8">
+
+{% if request.mobile %}
+<select class="w3-select w3-border ehc-input-lblue" name="match_id" onchange="this.form.submit()">
+{% else %}
+<select class="w3-select w3-border ehc-input-lblue auto_width" name="match_id" onchange="this.form.submit()">
+{% endif %}
+
+{% for m in match_list %} 
+
+    {% if m.id == match_id %}
+    <option value="{{m.id}}" selected>{{m.date_human}} - {{m.home}} vs. {{m.guest}} </option>
+    {% else %}  
+    <option value="{{m.id}}">{{m.date_human}} - {{m.home}} vs. {{m.guest}} </option>
+    {% endif %}
+
+{% endfor %}
+
+</select>
+<!--{% csrf_token %} -->
+</form>
+
+{% if request.mobile %}
+<table id="itable" class="w3-table w3-striped w3-border w3-bordered center w3-centered w3-margin-top">
+{% else %}
+<table id="itable" class="w3-table w3-striped w3-border w3-bordered auto_width center w3-centered w3-margin-top">
+{% endif %}
+
+<tr>
+    <th class="left">Name</th>
+	<th>Tip</th>
+	<th>Ergebnis</th>
+	<th>Punkte</th>
+	<th></th>	
+</tr>
+{% for t in users %}  
+<tr>
+    {% if t == request.user.username %}
+    <td class="left"><a href="/game/tip?match_id={{match_id}}&src=/game/tpd?match_id={{match_id}}">{{t}}</a></td>
+    {% else %}
+    <td class="left">{{t}}</td>    
+    {% endif %}
+	<td>{{tpd_dic|lookup:t|lookup:'tip'}}</td>
+	<td>{{tpd_dic|lookup:t|lookup:'result'}}</td>
+	<td>{{tpd_dic|lookup:t|lookup:'score'}}</td>
+	<td><small>{{tpd_dic|lookup:t|lookup:'date'}}</small></td>	
+</tr>
+{% endfor %}
+</table>
+</div>
+
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+{% endif %}	
+{% endblock %}
+

@@ -1,0 +1,12 @@
+{% if user.is_authenticated %}
+    <a href="{% url 'userauth_logout' %}?next=/game/" class="w3-bar-item w3-button w3-right w3-padding-24 ehc-hover-red"><i class="fa fa-sign-out fa-lg w3-xlarge"></i></a>
+    {% if request.mobile %}
+	<a href="/game/edit_settings" class="w3-bar-item w3-button w3-right w3-padding-24 ehc-hover-red"><i class="fa fa-user-circle-o fa-lg w3-xlarge"></i></a>
+    {% else %}		
+	<a href="/game/edit_settings" class="w3-bar-item w3-button w3-right w3-padding-24 ehc-hover-red"><i class="fa fa-user-circle-o fa-lg w3-xlarge"></i> {{ user.username }}</a>
+    {% endif %}
+
+	
+{% else %}
+    <a href="{% url 'userauth_login' %}?next={{request.path}}" class="w3-bar-item w3-button w3-right w3-padding-24 ehc-hover-red" ><i class="fa fa-user fa-lg w3-xlarge"></i></a>
+{% endif %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}{{title}}{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+<div class="w3-col w96percent">
+{% endif %}
+<div class="w3-container w3-padding-small ehc-blue-2 w3-margin-top w3-margin-bottom w3-center"><h1>Regeln</h1></div>
+
+Mit der Registrierung eine Kontos werden die nachfolgenden Regeln aktzeptiert:
+<ul>
+    <li class="w3-padding-small">Getippt wird nur auf Spiele des EHC Eisb&auml;ren Berlin</li>
+	<li class="w3-padding-small">Tipps m&uuml;ssen &uuml;ber das Webinterface abgegeben werden</li>
+	<li class="w3-padding-small">Jeder Spieler tippt für sich selbst.</li>
+	<li class="w3-padding-small">Tipps m&uuml;ssen <b>vor</b> dem Spielbeginn abgegeben werden. Als Spielbeginn z&auml;hlt der auf <a href="http://www.del.org">http://www.del.org</a> angegebene Startzeitpunkt f&uuml;r den jeweiligen Spieltag.
+	    <p>F&uuml;r die Saison 2017/2018 sind die folgenden Startzeitpunkte gelistet (Alle Zeitangaben nach "Mitteleurop&auml;ischer Zeit (MEZ/CET)"):</p>
+		<p><table id="itable" class="w3-table w3-striped w3-border w3-bordered auto_width center w3-centered w3-margin-top">
+		<tr><th class="left">Startzeit</th><th>Tipp erlaubt bis</th></tr>
+		<tr><td class="left">14:30 Uhr</td><td>14:29:59 Uhr</td></tr>
+		<tr><td class="left">16:30 Uhr</td><td>16:29:59 Uhr</td></tr>
+		<tr><td class="left">17:45 Uhr</td><td>17:44:59 Uhr</td></tr>
+		<tr><td class="left">19:30 Uhr</td><td>19:29:59 Uhr</td></tr>		
+		</table></p></li>
+	<li class="w3-padding-small">Tipps k&ouml;nnen bis Spielbeginn ge&auml;ndert werden.</li>
+	<li class="w3-padding-small">Mehrere Spieler k&ouml;nnen das gleiche Ergebnis tippen.</li>
+	<li class="w3-padding-small">Der Tipp 4:2 is erlaubt aber verp&ouml;nt, da exclusiv f&uuml;r Josi reserviert.</li>
+	<li class="w3-padding-small">Die Punktevergabe h&auml;ngt von der Tippgemeinschaft ab. 
+	{% if group %}
+	F&uuml;r die Gruppe <b>{{ group }}</b> werden die Punkte wie folgt vergeben.
+	{% endif %}
+	    <p><table id="htable" class="w3-table w3-striped w3-border w3-bordered auto_width center w3-centered w3-margin-top"><tr><th></th><th>Punkte</th></tr>
+		    <tr><td class="left">Sieg/Niederlage richtig</td><td>{{score_list.p_winloss}}</td></tr>
+		    <tr><td class="left">Tordifferenz richtig</td><td>{{score_list.p_diff}}</td></tr>
+		    <tr><td class="left">Endstand richtig</td><td>{{score_list.p_tipp}}</td></tr>
+		    <tr><td class="left">richtiger 7:2 Tipp</td><td>{{score_list.p_7vs2}}</td></tr>
+		    <tr><td class="left">kein Tipp abgegeben</td><td>{{score_list.p_notip}}</td></tr>				
+		</table></p>
+	</li>
+	<li>Die Schiedrsichterleistungen werden nach <a href="https://de.wikipedia.org/wiki/Plus/Minus">Plus/Minus Statistik"</a> ermittelt</li>		
+</ul>
+</div>
+
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+{% endif %}	
+
+{% endblock %}
+

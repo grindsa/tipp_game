@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}Tippspiel|{{title}}{% endblock %}
+
+{% block extrahead  %}
+    <meta http-equiv="refresh" content="120">
+{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+<div class="w3-col w96percent">
+{% endif %}
+
+<div class="w3-container w3-padding-small ehc-blue-2 w3-section w3-center"><h1><a href="/game/gamestats?match_id={{match_id|add:-1}}"><i class="w3-margin-right fa fa-arrow-left">&nbsp;</i></a>{{ title }}<a href="/game/gamestats?match_id={{match_id|add:1}}"><i class="w3-margin-left fa fa-arrow-right">&nbsp;</i></a></h1></div>
+{% if d_update %}
+<div class="w3-margin-bottom"><span class="w3-tag w3-green w3-round">Live:</span> {{d_update}}</div>
+{% endif %}
+
+<table id="divnav" class="w3-table w3-border center w3-centered w3-border w3-bordered auto_width w3-margin-top w3-small">
+<tr>
+    <th colspan="2">Tore</th>
+    <th>1st</th>
+    <th>2nd</th>
+    <th>3rd</th>
+    <th>OT</th>
+    <th>SO</th>
+</tr>
+<tr>
+    <td><img src="{{gamestat_dic.homeLogo}}" alt="{{gamestat_dic.homeTeam}}" class="fa-lg" width="22"></td>
+    <td>{{gamestat_dic.homeTeam}}</td>    
+    <td>{{gamestat_dic.homeScoredic.1}}</td>
+    <td>{{gamestat_dic.homeScoredic.2}}</td> 
+    <td>{{gamestat_dic.homeScoredic.3}}</td> 
+    <td>{{gamestat_dic.homeScoredic.OT}}</td>    
+    <td>{{gamestat_dic.homeScoredic.GWS}}</td>       
+</tr>
+<tr>
+    <td><img src="{{gamestat_dic.guestLogo}}" alt="{{gamestat_dic.guestTeam}}" class="fa-lg" width="22"></td>
+    <td>{{gamestat_dic.guestTeam}}</td>    
+    <td>{{gamestat_dic.guestScoredic.1}}</td>
+    <td>{{gamestat_dic.guestScoredic.2}}</td> 
+    <td>{{gamestat_dic.guestScoredic.3}}</td> 
+    <td>{{gamestat_dic.guestScoredic.OT}}</td>    
+    <td>{{gamestat_dic.guestScoredic.GWS}}</td>       
+</tr>
+</table>
+
+<div class="w3-margin-top">
+{% if request.path == '/game/gamestats' %}
+    <a href="/game/gamestats?match_id={{match_id}}#divnav" class="w3-button ehc-red-2 ehc-hover-red-2 w3-tiny ">Überblick</a>
+{% else %}
+    <a href="/game/gamestats?match_id={{match_id}}#divnav" class="w3-button ehc-blue-1 ehc-hover-red-2 w3-tiny">Überblick</a>
+{% endif %}
+{% if request.path == '/game/nerdstats' %}
+    <a href="/game/nerdstats?match_id={{match_id}}#divnav" class="w3-button ehc-red-2 ehc-hover-red-2 w3-tiny ">Details</a>
+{% else %}
+    <a href="/game/nerdstats?match_id={{match_id}}#divnav" class="w3-button ehc-blue-1 ehc-hover-red-2 w3-tiny">Details</a>
+{% endif %}
+{% if request.path == '/game/gameticker' %}
+    <a href="/game/gameticker?match_id={{match_id}}#divnav" class="w3-button ehc-red-2 ehc-hover-red-2 w3-tiny ">Live-Ticker</a>
+{% else %}
+    <a href="/game/gameticker?match_id={{match_id}}#divnav" class="w3-button ehc-blue-1 ehc-hover-red-2 w3-tiny">Live-Ticker</a>
+{% endif %}
+{% if request.path == '/article/ticker' %}
+    <a href="/article/ticker/?matchid={{match_id}}#divnav" class="w3-button ehc-red-2 ehc-hover-red-2 w3-tiny">Sportal-Ticker</a>
+{% else %}
+    <a href="/article/ticker/?matchid={{match_id}}#divnav" class="w3-button ehc-blue-1 ehc-hover-red-2 w3-tiny">Sportal-Ticker</a>
+{% endif %}
+</div>
+
+<table id="itable" class="w3-table w3-border center w3-centered">
+<tr>
+    <!-- <th>Quelle</th> -->
+	<th colspan="2">&nbsp;</th>
+</tr>
+
+<tr><td colspan="2" class="w3-small"><b>Tore</b></td>
+<tr>
+    <td><div class="w3-container w3-light-grey w3-tiny" style="padding:0"><div class="w3-container {{gamestat_dic.homeScorec}} w3-right-align w3-right" style="width:{{gamestat_dic.homeScorep}}%">{{gamestat_dic.homeScore}}</div></div></td>
+    <td><div class="w3-container w3-light-grey w3-tiny" style="padding:0"><div class="w3-container {{gamestat_dic.guestScorec}} w3-left-align" style="width:{{gamestat_dic.guestScorep}}%">{{gamestat_dic.guestScore}}</div></div></td>
+</tr>
+
+<tr><td colspan="2" class="w3-small"><b>Torsch&uuml;sse</b></td>
+<tr>
+    <td><div class="w3-container w3-light-grey w3-tiny" style="padding:0"><div class="w3-container {{gamestat_dic.homeSogc}} w3-right-align w3-right" style="width:{{gamestat_dic.homeSogp}}%">{{gamestat_dic.homeSog}}</div></div></td>
+    <td><div class="w3-container w3-light-grey w3-tiny" style="padding:0"><div class="w3-container {{gamestat_dic.guestSogc}} w3-left-align" style="width:{{gamestat_dic.guestSogp}}%">{{gamestat_dic.guestSog}}</div></div></td>
+</tr>
+
+<tr><td colspan="2" class="w3-small"><b>Geblockte Sch&uuml;sse</b></td>
+<tr>
+    <td><div class="w3-container w3-light-grey w3-tiny" style="padding:0"><div class="w3-container {{gamestat_dic.homeSsgc}} w3-right-align w3-right" style="width:{{gamestat_dic.homeSsgp}}%">{{gamestat_dic.homeSsg}}</div></div></td>
+    <td><div class="w3-container w3-light-grey w3-tiny" style="padding:0"><div class="w3-container {{gamestat_dic.guestSsgc}} w3-left-align" style="width:{{gamestat_dic.guestSsgp}}%">{{gamestat_dic.guestSsg}}</div></div></td>
+</tr>
+
+<tr><td colspan="2" class="w3-small"><b>Puckbesitz</b></td>
+<tr>
+    <td><div class="w3-container w3-light-grey w3-tiny" style="padding:0"><div class="w3-container {{gamestat_dic.homeshotsc}} w3-right-align w3-right" style="width:{{gamestat_dic.homeshotsp}}%">{{gamestat_dic.homeshotsp}}%</div></div></td>
+    <td><div class="w3-container w3-light-grey w3-tiny" style="padding:0"><div class="w3-container {{gamestat_dic.guestshotsc}} w3-left-align" style="width:{{gamestat_dic.guestshotsp}}%">{{gamestat_dic.guestshotsp}}%</div></div></td>
+</tr>
+
+<tr><td colspan="2" class="w3-small"><b>Gewonnene Bullys</b></td>
+<tr>
+    <td><div class="w3-container w3-light-grey w3-tiny" style="padding:0"><div class="w3-container {{gamestat_dic.homeBullyc}} w3-right-align w3-right" style="width:{{gamestat_dic.homeBullyp}}%">{{gamestat_dic.homeBully}}</div></div></td>
+    <td><div class="w3-container w3-light-grey w3-tiny" style="padding:0"><div class="w3-container {{gamestat_dic.guestBullyc}} w3-left-align" style="width:{{gamestat_dic.guestBullyp}}%">{{gamestat_dic.guestBully}}</div></div></td>
+</tr>
+
+<tr><td colspan="2" class="w3-small"><b>Strafminuten</b></td>
+<tr>
+    <td><div class="w3-container w3-light-grey w3-tiny" style="padding:0"><div class="w3-container {{gamestat_dic.homePimc}} w3-right-align w3-right" style="width:{{gamestat_dic.homePimp}}%">{{gamestat_dic.homePim}}</div></div></td>
+    <td><div class="w3-container w3-light-grey w3-tiny" style="padding:0"><div class="w3-container {{gamestat_dic.guestPimc}} w3-left-align" style="width:{{gamestat_dic.guestPimp}}%">{{gamestat_dic.guestPim}}</div></div></td>
+</tr>
+
+<tr><td colspan="2" class="w3-small"><b>Zeit im Powerplay</b></td>
+<tr>
+    <td><div class="w3-container w3-light-grey w3-tiny" style="padding:0"><div class="w3-container {{gamestat_dic.homeTppc}} w3-right-align w3-right" style="width:{{gamestat_dic.homeTppp}}%">{{gamestat_dic.homeTpp}}</div></div></td>
+    <td><div class="w3-container w3-light-grey w3-tiny" style="padding:0"><div class="w3-container {{gamestat_dic.guestTppc}} w3-left-align" style="width:{{gamestat_dic.guestTppp}}%">{{gamestat_dic.guestTpp}}</div></div></td>
+</tr>
+
+<tr><td colspan="2" class="w3-small"><b>Poweplaytore</b></td>
+<tr>
+    <td><div class="w3-container w3-light-grey w3-tiny" style="padding:0"><div class="w3-container {{gamestat_dic.homePpgc}} w3-right-align w3-right" style="width:{{gamestat_dic.homePpgp}}%">{{gamestat_dic.homePpg}}</div></div></td>
+    <td><div class="w3-container w3-light-grey w3-tiny" style="padding:0"><div class="w3-container {{gamestat_dic.guestPpgc}} w3-left-align" style="width:{{gamestat_dic.guestPpgp}}%">{{gamestat_dic.guestPpg}}</div></div></td>
+</tr>
+
+<tr><td colspan="2" class="w3-small"><b>Unterzahltore</b></td>
+<tr>
+    <td><div class="w3-container w3-light-grey w3-tiny w3-margin-bottom" style="padding:0"><div class="w3-container {{gamestat_dic.homeShgc}} w3-right-align w3-right" style="width:{{gamestat_dic.homeShgp}}%">{{gamestat_dic.homeShg}}</div></div></td>
+    <td><div class="w3-container w3-light-grey w3-tiny w3-margin-bottom" style="padding:0"><div class="w3-container {{gamestat_dic.guestShgc}} w3-left-align" style="width:{{gamestat_dic.guestShgp}}%">{{gamestat_dic.guestShg}}</div></div></td>
+</tr>
+
+</table>
+</div>
+
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+{% endif %}	
+{% endblock %}

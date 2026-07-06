@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}404 - Page not found{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w25percent">&nbsp;</div>
+<div class="w3-col w50percent">
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+<div class="w3-col w96percent">
+{% endif %}
+
+<div class="w3-container w3-padding-small ehc-blue-2 w3-section w3-center"><h1>Die Seite wurde nicht gefunden...</h1></div>
+
+<div class="w3-container w3-padding-small w3-section w3-center">
+<p>... aber ich habe ein schönes Foto für dich.</p>
+<p><img class="w3-image" src="/static/img/ebb-muc.jpg" alt="smash"></p>
+</div>
+</div>
+
+{% if request.mobile == False %}
+<div class="w3-col w25percent"></div>
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+{% endif %}	
+{% endblock %}

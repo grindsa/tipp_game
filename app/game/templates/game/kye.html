@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}Tippspiel|{{title}}{% endblock %}
+
+{% block extrahead %}
+    <script src="/static/js/highcharts/highcharts.js" type="text/javascript"></script>
+    <script src="/static/js/highcharts/modules/exporting.js"></script>
+    <script src="/static/js/highcharts/modules/offline-exporting.js"></script>
+    <script type="text/javascript">
+    $(function () {
+    $('#container').highcharts(
+        {% autoescape off %}	
+	    {{chart_options}});
+        {% endautoescape %}
+    });
+		</script>
+		
+    <script type="text/javascript">
+    $(function () {
+    $('#pie').highcharts(
+        {% autoescape off %}
+	    {{pie_options}});
+        {% endautoescape %}
+    });
+		</script>		
+{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+<div class="w3-col w96percent">
+{% endif %}
+
+<div class="w3-container w3-padding-small ehc-blue-2 w3-section w3-center"><h1>{{title}}</h1></div>
+{% if request.mobile %}
+<div id="container" class="chart" style="width:99%; height:180px"> Chart will be rendered here </div>
+{% else %}
+<div id="container" class="chart" style="width:100%; height:310px"> Chart will be rendered here </div>
+{% endif %}
+
+{% if lineup_list %}
+<div class="w3-container w3-padding-small ehc-blue-3 w3-section w3-center"><h2 class="center">Spielaufstellung</h2></div>
+<table id="itable" class="w3-table w3-striped w3-border w3-bordered auto_width center w3-centered w3-margin-top">
+<tr>
+<th></th>
+<th class="left no-border">Namen</th>
+</tr>
+<tr>
+<td class="left no-rborder">Goalies</td>
+<td class="left no-rborder">{{lineup_list.gk}}</td>
+</tr>
+<tr>
+<td class="left no-rborder">1.Reihe</td>
+<td class="left no-rborder">{{lineup_list.r1}}</td>
+</tr>
+<tr>
+<td class="left no-rborder">2.Reihe</td>
+<td class="left no-rborder">{{lineup_list.r2}}</td>
+</tr>
+<tr>
+<td class="left no-rborder">3.Reihe</td>
+<td class="left no-rborder">{{lineup_list.r3}}</td>
+</tr>
+<tr>
+<td class="left no-rborder">4.Reihe</td>
+<td class="left no-rborder">{{lineup_list.r4}}</td>
+</tr>
+
+</table>
+
+{% endif %}
+
+<div class="w3-container w3-padding-small ehc-blue-3 w3-section w3-center"><h2>Ergebnisse der letzten Spiele der Eisb&auml;ren gegen {{article_a}} {{team_name}}</h2></div>
+<table id="htable" class="w3-table w3-striped w3-border w3-bordered center w3-centered w3-margin-top">
+<tr>
+	<th class="left">Datum</th>
+	<th class="left" colspan=2>Heim</th>
+	<th class="left" colspan=2>Gast</th>
+	{% if request.mobile %}
+	    <th>Erg</th>
+	{% else %}
+        <th>Ergebnis</th>
+	{% endif %}
+</tr>
+{% for m in sort_list %}
+<tr>
+    <td style="width:{{tab_width_list.0}}px">{{match_dic|lookup:m|lookup:'date_human_long'}}</td>
+	{% if request.mobile %}
+        <td style="width:{{tab_width_list.1}}px" class="left no-rborder"><img src="{{match_dic|lookup:m|lookup:'home_team__logo_url'}}" alt="{{match_dic|lookup:m|lookup:'home_team__short_name'}}" width="22"></td>	
+        <td style="width:{{tab_width_list.2}}px" class="left">{{match_dic|lookup:m|lookup:'home_team__short_name'}}</td>
+        <td style="width:{{tab_width_list.3}}px" class="left no-rborder"><img src="{{match_dic|lookup:m|lookup:'guest_team__logo_url'}}" alt="{{match_dic|lookup:m|lookup:'guest_team__short_name'}}" width="22"></td>			
+        <td style="width:{{tab_width_list.4}}px" class="left">{{match_dic|lookup:m|lookup:'guest_team__short_name'}}</td>	
+	{% else %}
+        <td style="width:{{tab_width_list.1}}px" class="left no-rborder"><img src="{{match_dic|lookup:m|lookup:'home_team__logo_url'}}" alt="{{match_dic|lookup:m|lookup:'home_team__short_name'}}" width="22"></td>		
+        <td style="width:{{tab_width_list.2}}px" class="left">{{match_dic|lookup:m|lookup:'home_team__team_name'}}</td>
+        <td style="width:{{tab_width_list.3}}px" class="left no-rborder"><img src="{{match_dic|lookup:m|lookup:'guest_team__logo_url'}}" alt="{{match_dic|lookup:m|lookup:'guest_team__short_name'}}" width="22"></td>		
+        <td style="width:{{tab_width_list.4}}px" class="left">{{match_dic|lookup:m|lookup:'guest_team__team_name'}}</td>		
+    {% endif %}
+       {% if match_dic|lookup:m|lookup:'winloss' == 'loss' %}
+       <td style="width:{{tab_width_list.5}}px" class="bgerror">{{match_dic|lookup:m|lookup:'result'}}</td>	   
+       {% else %}	   
+       <td style="width:{{tab_width_list.5}}px">{{match_dic|lookup:m|lookup:'result'}}</td>
+       {% endif %}	   
+</tr>
+{% endfor %}
+</table>
+<div class="w3-container w3-padding-small ehc-blue-3 w3-section w3-center"><h2>Ergebnisse der letzten Spiele {{article_g}} {{team_name}}</h2></div>
+
+<table id="gtable" class="w3-table w3-striped w3-border w3-bordered center w3-centered w3-margin-top">
+<tr>
+	<th>Datum</th>
+	<th colspan=2>Heim</th>
+	<th colspan=2>Gast</th>
+	{% if request.mobile %}
+	    <th>Erg</th>
+	{% else %}
+        <th>Ergebnis</th>
+	{% endif %}
+</tr>
+{% for m in del_sort_list %}
+<tr>
+    <td style="width:{{tab_width_list.0}}px">{{del_match_dic|lookup:m|lookup:'date_human_long'}}</td>
+	{% if request.mobile %}
+        <td style="width:{{tab_width_list.1}}px" class="left no-rborder"><img src="{{del_match_dic|lookup:m|lookup:'home_team__logo_url'}}" alt="{{del_match_dic|lookup:m|lookup:'home_team__short_name'}}" width="22"></td>	
+        <td style="width:{{tab_width_list.2}}px" class="left">{{del_match_dic|lookup:m|lookup:'home_team__short_name'}}</td>
+        <td style="width:{{tab_width_list.3}}px" class="left no-rborder"><img src="{{del_match_dic|lookup:m|lookup:'guest_team__logo_url'}}" alt="{{del_match_dic|lookup:m|lookup:'guest_team__short_name'}}" width="22"></td>			
+        <td style="width:{{tab_width_list.4}}px" class="left">{{del_match_dic|lookup:m|lookup:'guest_team__short_name'}}</td>	
+	{% else %}
+        <td style="width:{{tab_width_list.1}}px" class="left no-rborder"><img src="{{del_match_dic|lookup:m|lookup:'home_team__logo_url'}}" alt="{{del_match_dic|lookup:m|lookup:'home_team__short_name'}}" width="22"></td>		
+        <td style="width:{{tab_width_list.2}}px" class="left">{{del_match_dic|lookup:m|lookup:'home_team__team_name'}}</td>
+        <td style="width:{{tab_width_list.3}}px" class="left no-rborder"><img src="{{del_match_dic|lookup:m|lookup:'guest_team__logo_url'}}" alt="{{del_match_dic|lookup:m|lookup:'guest_team__short_name'}}" width="22"></td>		
+        <td style="width:{{tab_width_list.4}}px" class="left">{{del_match_dic|lookup:m|lookup:'guest_team__team_name'}}</td>		
+    {% endif %}
+       {% if del_match_dic|lookup:m|lookup:'winloss' == 'loss' %}
+       <td style="width:{{tab_width_list.5}}px" class="bgerror">{{del_match_dic|lookup:m|lookup:'result'}}</td>	   
+       {% else %}	   
+       <td style="width:{{tab_width_list.5}}px">{{del_match_dic|lookup:m|lookup:'result'}}</td>
+       {% endif %}	   
+</tr>
+{% endfor %}
+</table>
+
+<div class="w3-container w3-padding-small ehc-blue-3 w3-section w3-center"><h2>Ergebnisse der letzten Spiele der Eisb&auml;ren</h2></div>
+<table id="ftable" class="w3-table w3-striped w3-border w3-bordered center w3-centered w3-margin-top">
+<tr>
+	<th>Datum</th>
+	<th colspan=2>Heim</th>
+	<th colspan=2>Gast</th>
+	{% if request.mobile %}
+	    <th>Erg</th>
+	{% else %}
+        <th>Ergebnis</th>
+	{% endif %}
+</tr>
+{% for m in ebb_sort_list %}
+<tr>
+    <td style="width:{{tab_width_list.0}}px">{{ebb_match_dic|lookup:m|lookup:'date_human_long'}}</td>
+	{% if request.mobile %}
+        <td style="width:{{tab_width_list.1}}px" class="left no-rborder"><img src="{{ebb_match_dic|lookup:m|lookup:'home_team__logo_url'}}" alt="{{ebb_match_dic|lookup:m|lookup:'home_team__short_name'}}" width="22"></td>	
+        <td style="width:{{tab_width_list.2}}px" class="left">{{ebb_match_dic|lookup:m|lookup:'home_team__short_name'}}</td>
+        <td style="width:{{tab_width_list.3}}px" class="left no-rborder"><img src="{{ebb_match_dic|lookup:m|lookup:'guest_team__logo_url'}}" alt="{{ebb_match_dic|lookup:m|lookup:'guest_team__short_name'}}" width="22"></td>			
+        <td style="width:{{tab_width_list.4}}px" class="left">{{ebb_match_dic|lookup:m|lookup:'guest_team__short_name'}}</td>	
+	{% else %}
+        <td style="width:{{tab_width_list.1}}px" class="left no-rborder"><img src="{{ebb_match_dic|lookup:m|lookup:'home_team__logo_url'}}" alt="{{ebb_match_dic|lookup:m|lookup:'home_team__short_name'}}" width="22"></td>		
+        <td style="width:{{tab_width_list.2}}px" class="left">{{ebb_match_dic|lookup:m|lookup:'home_team__team_name'}}</td>
+        <td style="width:{{tab_width_list.3}}px" class="left no-rborder"><img src="{{ebb_match_dic|lookup:m|lookup:'guest_team__logo_url'}}" alt="{{ebb_match_dic|lookup:m|lookup:'guest_team__short_name'}}" width="22"></td>		
+        <td style="width:{{tab_width_list.4}}px" class="left">{{ebb_match_dic|lookup:m|lookup:'guest_team__team_name'}}</td>		
+    {% endif %}
+       {% if ebb_match_dic|lookup:m|lookup:'winloss' == 'loss' %}
+       <td style="width:{{tab_width_list.5}}px" class="bgerror">{{ebb_match_dic|lookup:m|lookup:'result'}}</td>	   
+       {% else %}	   
+       <td style="width:{{tab_width_list.5}}px">{{ebb_match_dic|lookup:m|lookup:'result'}}</td>
+       {% endif %}	   
+</tr>
+{% endfor %}
+</table>
+</div>
+
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+{% endif %}	
+{% endblock %}

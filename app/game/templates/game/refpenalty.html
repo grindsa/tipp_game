@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}{{title}}{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+<div class="w3-col w96percent">
+{% endif %}
+
+<div class="w3-container w3-padding-small ehc-blue-2 w3-margin-top w3-margin-bottom w3-center"><h1>{{title}}</h1></div>
+
+<div id="divnav">
+{% if request.path == '/game/refstats' %}
+    <a href="/game/refstats#divnav" class="w3-button ehc-red-2 ehc-hover-red-2 w3-tiny">Gesamt</a>
+{% else %}
+    <a href="/game/refstats#divnav" class="w3-button ehc-blue-1 ehc-hover-red-2 w3-tiny">Gesamt</a>
+{% endif %}
+{% if request.path == '/game/refhstats' %}
+    <a href="/game/refhstats#divnav" class="w3-button ehc-red-2 ehc-hover-red-2 w3-tiny">Heim</a>
+{% else %}
+    <a href="/game/refhstats#divnav" class="w3-button ehc-blue-1 ehc-hover-red-2 w3-tiny">Heim</a>
+{% endif %}
+{% if request.path == '/game/refgstats' %}
+    <a href="/game/refgstats#divnav" class="w3-button ehc-red-2 ehc-hover-red-2 w3-tiny">Ausw&auml;rts</a>
+{% else %}
+    <a href="/game/refgstats#divnav" class="w3-button ehc-blue-1 ehc-hover-red-2 w3-tiny">Ausw&auml;rts</a>
+{% endif %}
+{% if request.path == '/game/refpenalty' %}
+    <a href="/game/refpenalty#divnav" class="w3-button ehc-red-2 ehc-hover-red-2 w3-tiny">Strafminuten</a>
+{% else %}
+    <a href="/game/refpenalty#divnav" class="w3-button ehc-blue-1 ehc-hover-red-2 w3-tiny">Strafminuten</a>
+{% endif %}
+</div>
+
+<table id="itable" class="w3-table w3-striped w3-border w3-bordered center w3-centered">
+<tr>
+    <th>#</th>
+    <th class="left">Name</th>
+	{% if request.mobile %}
+	<th>Sp</th>
+    {% else %}
+	<th>Spiele</th>
+    {% endif %}
+	<th>S</th>
+	<th>N</th>
+	<th><img src="/static/img/fist.png" width="22" alt="P"></th>
+	<th><img src="/static/img/avg.png" width="14" alt="P"></th>
+</tr>
+
+{% for rid in sort_list %}
+<tr class="dualc">
+    <td>{{ref_dict|lookup:rid|lookup:'rank'}}
+    <td class="left"><a href="/game/refdet?id={{rid}}">{{ref_dict|lookup:rid|lookup:'name'}}</a></td>
+	<td>{{ref_dict|lookup:rid|lookup:'matches'}}</td>
+    <td>{{ref_dict|lookup:rid|lookup:'W'}}</td>
+    <td>{{ref_dict|lookup:rid|lookup:'L'}}</td>
+    <td class="score">{{ref_dict|lookup:rid|lookup:'mpmin'}}/{{ref_dict|lookup:rid|lookup:'opmin'}}</td>
+    <td>{{ref_dict|lookup:rid|lookup:'mavg'}}/{{ref_dict|lookup:rid|lookup:'oavg'}}</td>
+</tr>
+{% endfor %}
+<!-- <tr>
+    <th colspan="5" class="left">Gesamt:</th>
+    <th>{{sum}}</th>
+    <th></th>
+</tr> -->
+</table>
+</div>
+
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}{{title}}{% endblock %}
+
+{% block extrahead %}
+    {% if chart_options %}
+    <script src="/static/js/highcharts/highcharts.js" type="text/javascript"></script>
+    <script src="/static/js/highcharts/highcharts-more.js" type="text/javascript"></script>
+    <script src="/static/js/highcharts/modules/exporting.js"></script>
+    <script src="/static/js/highcharts/modules/offline-exporting.js"></script>
+
+    <script type="text/javascript">
+    $(function () {
+    $('#container').highcharts(
+        {% autoescape off %}
+	    {{chart_options}});
+        {% endautoescape %}
+    });
+		</script>
+	{% endif %}
+{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w25percent">&nbsp;</div>
+<div class="w3-col w50percent">
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+<div class="w3-col w96percent">
+{% endif %}
+
+<div class="w3-container w3-padding-small ehc-blue-2 w3-section w3-center"><h1>Spieler Statistik</h1></div>
+
+<div class="w3-margin-bottom">Datum: {{d_update}}</div>
+
+
+<div class="w3-margin-top nowrap" id="divnav">
+{%  for ele in player_table_structure %}
+    {% if ele.id == tab_id %}
+<a href="?tab_id={{ele.id}}&gtab_id={{gtab_id}}#divnav" class="w3-button ehc-red-2 ehc-hover-red-2 w3-tiny ">
+        {% if ele.img %}
+    <img src="{{ ele.img.src }}" alt="{{ ele.img.alt }}" width="{{ ele.img.width }}">
+        {% elif ele.icon %}
+    <i class="{{ele.icon}}"></i>
+        {% else %}
+        {{ ele.name }}
+        {% endif %}
+</a>
+    {% else %}
+<a href="?tab_id={{ele.id}}&gtab_id={{gtab_id}}#divnav" class="w3-button ehc-blue-1 ehc-hover-red-2 w3-tiny ">
+        {% if ele.img %}
+    <img src="{{ ele.img.src }}" alt="{{ ele.img.alt }}" width="{{ ele.img.width }}">
+        {% elif ele.icon %}
+    <i class="{{ele.icon}}"></i>
+        {% else %}
+        {{ ele.name }}
+        {% endif %}
+</a>
+    {% endif %}
+{% endfor %}
+</div>
+<div class="w3-border ehc-blue-1">&nbsp;</div>
+
+{% if chart_options %}
+<div id="container" class="chart"> Chart will be rendered here </div>
+{% endif %}
+
+{% if request.mobile %}
+<table id="htable" class="w3-table w3-striped w3-border w3-bordered w3-centered center w3-tiny">
+{% else %}
+<table id="htable" class="w3-table w3-striped w3-border w3-bordered w3-centered center">
+{% endif %}
+
+<!--- table header --->
+{%  for elem in player_table_structure %}
+    {% if elem.id == tab_id %}
+<tr>
+    {% for ele in elem.structure %}
+        {% if ele.classth %}
+    <th class="{{ ele.classth }}">
+        {% else %}
+    <th>
+        {% endif %}
+        {% if ele.tooltip %}
+    <div class="tooltip">
+        {% endif %}
+        {% if ele.img %}
+    <img src="{{ ele.img.src }}" alt="{{ ele.img.alt }}" width="{{ ele.img.width }}">
+        {% elif ele.icon %}
+    <i class="{{ele.icon}}">{{ ele.name }}</i>
+        {% else %}
+        {{ ele.name }}
+        {% endif %}
+        {% if ele.tooltip %}
+    <span class="tooltiptext">{{ ele.tooltip }}</span></div>
+        {% endif %}
+    </th>
+    {% endfor %}
+</tr>
+    {% endif %}
+{% endfor %}
+<!--- table content -->
+
+{% for player in player_stat_list %}
+    {% for elem in player_table_structure %}
+    {% if elem.id == tab_id %}
+    <tr>
+        {% for ele in elem.structure %}
+        {% if player_format_dic|lookup:player.number|lookup:ele.field  %}
+    <td class="{{ player_format_dic|lookup:player.number|lookup:ele.field }}">
+        {% else %} 
+    <td>          
+        {% endif %}  
+        {% if ele.type == 'imgflag' %}
+            {% for img in player|lookup:ele.field %}
+    <img src="/static/img/{{ img }}" width="13" alt="flag">
+            {% endfor %}
+        {% elif ele.field == 'full_name' %}
+            <a href="/game/playernerdstats?number={{player.number}}">{{player|lookup:ele.field}}</a>
+        {% else %}
+            {{player|lookup:ele.field}}
+        {% endif %}
+    </td>
+        {% endfor %}
+    </tr>
+    {% endif %}
+    {% endfor %}
+{% endfor %}
+</table>
+
+
+<div class="w3-container w3-padding-small ehc-blue-2 w3-section w3-center"><h1>Torwart Statistik</h1></div>
+
+<div class="w3-margin-top" id="gdivnav">
+{%  for ele in goalie_table_structure %}
+    {% if ele.id == gtab_id %}
+<a href="?tab_id={{tab_id}}&gtab_id={{ele.id}}#gdivnav" class="w3-button ehc-red-2 ehc-hover-red-2 w3-tiny ">
+        {% if ele.img %}
+    <img src="{{ ele.img.src }}" alt="{{ ele.img.alt }}" width="{{ ele.img.width }}">
+        {% elif ele.icon %}
+    <i class="{{ele.icon}}"></i>
+        {% else %}
+        {{ ele.name }}
+        {% endif %}
+</a>
+    {% else %}
+<a href="?tab_id={{tab_id}}&gtab_id={{ele.id}}#gdivnav" class="w3-button ehc-blue-1 ehc-hover-red-2 w3-tiny ">
+        {% if ele.img %}
+    <img src="{{ ele.img.src }}" alt="{{ ele.img.alt }}" width="{{ ele.img.width }}">
+        {% elif ele.icon %}
+    <i class="{{ele.icon}}"></i>
+        {% else %}
+        {{ ele.name }}
+        {% endif %}
+</a>
+    {% endif %}
+{% endfor %}
+</div>
+
+{% if request.mobile %}
+<table id="gtable" class="w3-table w3-striped w3-border w3-bordered w3-centered center w3-tiny">
+{% else %}
+<table id="gtable" class="w3-table w3-striped w3-border w3-bordered w3-centered center">
+{% endif %}
+
+<!--- table header --->
+{%  for elem in goalie_table_structure %}
+    {% if elem.id == gtab_id %}
+<tr>
+    {% for ele in elem.structure %}
+        {% if ele.classth %}
+    <th class="{{ ele.classth }}">
+        {% else %}
+    <th>
+        {% endif %}
+        {% if ele.tooltip %}
+    <div class="tooltip">
+        {% endif %}
+        {% if ele.img %}
+    <img src="{{ ele.img.src }}" alt="{{ ele.img.alt }}" width="{{ ele.img.width }}">
+        {% elif ele.icon %} 
+    <i class="{{ele.icon}}"></i>
+        {% else %}
+        {{ ele.name }}
+        {% endif %}
+        {% if ele.tooltip %}
+    <span class="tooltiptext">{{ ele.tooltip }}</span></div>
+        {% endif %}
+    </th>
+    {% endfor %}
+</tr>
+    {% endif %}
+{% endfor %}
+<!--- table content -->
+{% for player in goalie_stat_list %}
+    {% for elem in goalie_table_structure %}
+    {% if elem.id == gtab_id %}
+    <tr>
+        {% for ele in elem.structure %}
+        {% if goalie_format_dic|lookup:player.number|lookup:ele.field  %}
+    <td class="{{ goalie_format_dic|lookup:player.number|lookup:ele.field }}">
+        {% else %} 
+    <td>          
+        {% endif %}      
+        {% if ele.type == 'imgflag' %}
+            {% for img in player|lookup:ele.field %}
+    <img src="/static/img/{{ img }}" width="13" alt="flag">
+            {% endfor %}
+        {% else %}
+            {{player|lookup:ele.field}}
+        {% endif %}
+    </td>
+        {% endfor %}
+</tr>
+    {% endif %}
+    {% endfor %}
+{% endfor %}
+</table>
+</div>
+
+{% if request.mobile == False %}
+<div class="w3-col w25percent"></div>
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+{% endif %}
+{% endblock %}

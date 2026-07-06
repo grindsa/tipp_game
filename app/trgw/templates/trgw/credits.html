@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}
+{{title}}
+{% endblock %}
+
+{% block extrahead %}
+    {% if chart_options %}
+    <script src="/static/js/highcharts.js" type="text/javascript"></script>
+    <script type="text/javascript">
+    $(function () {
+    $('#container').highcharts(
+        {% autoescape off %}	
+	    {{chart_options}});
+        {% endautoescape %}
+    });
+		</script>
+	{% endif %}
+{% endblock %}
+
+{% block content %}
+
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w05percent">&nbsp;</div>
+<div class="w3-col w90percent">
+{% endif %}
+
+<div class="w3-container w3-center w3-padding"><b>aktueller Saldo:</b> noch {{current_credits}} Credits verf&uuml;gbar<br>
+<small>Stand: {{current_date}}</small></div>
+{% if chart_options %}
+{% if request.mobile %}
+<div id="container" class="chart" style="width:340px; height:180px"> Chart will be rendered here </div>
+{% else %}
+<div id="container" class="chart" style="width:600px; height:310px"> Chart will be rendered here </div>
+{% endif %}
+{% endif %}
+<table id="itable" class="w3-table w3-striped w3-border w3-bordered auto_width center w3-centered w3-margin-top">
+<tr>
+    <th colspan="2">Datum</th>	
+	<th>Verbrauch</th>
+	<th>Saldo</th>	
+</tr>
+{% for t in trc_list %}
+{% if t.delta != 0 %}
+<tr class="dualc">
+    <td>{{t.wd}}</td>
+    <td>{{t.date_human}}</td>
+    <td class="center">{{t.delta}}</td>
+    <td class="center">{{t.credit}}</td>	
+</tr>
+{% endif %}
+{% endfor %}
+</table>
+</div>
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w05percent">&nbsp;</div>
+{% endif %}	
+{% endblock %}
+

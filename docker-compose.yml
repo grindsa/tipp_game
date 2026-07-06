@@ -1,0 +1,75 @@
+services:
+  tgdb:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${MARIADB_DATABASE}
+      MARIADB_USER: ${MARIADB_USER}
+      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+    volumes:
+      - tg_data:/var/lib/mysql
+    networks:
+      - tg-internal
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    volumes:
+      - tg_static_volume:/app/static
+      - tg_media_volume:/app/media
+    environment:
+      DJANGO_ENV: ${DJANGO_ENV:-development}
+      DJANGO_SETTINGS_MODULE: tipp_game.settings
+      DB_NAME: ${MARIADB_DATABASE}
+      DB_USER: ${MARIADB_USER}
+      DB_PASSWORD: ${MARIADB_PASSWORD}
+      DB_HOST: tgdb
+      WB_NAME: ${WB_DATABASE}
+      WB_USER: ${WB_USER}
+      WB_PASSWORD: ${WB_PASSWORD}
+      DB_PORT: "3306"
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DJANGO_DEBUG: ${DJANGO_DEBUG}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS}
+      EMAIL_HOST: ${EMAIL_HOST}
+      EMAIL_PORT: ${EMAIL_PORT}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
+      ADMINS: ${ADMINS}
+      MAILER_LIST: ${MAILER_LIST}
+      CAPTCHA_LETTER_ROTATION: ${CAPTCHA_LETTER_ROTATION}
+      WA_SRV: ${WA_SRV}
+      WA_PORT: ${WA_PORT}
+      WA_ADMIN_NUMBER: ${WA_ADMIN_NUMBER}
+      TR_ID: ${TR_ID}
+      TR_SECRET: ${TR_SECRET}
+      TR_SK: ${TR_SK}
+      OTP_TOTP_ISSUER: ${OTP_TOTP_ISSUER}
+    networks:
+      - tg-internal
+      - tg
+    depends_on:
+      tgdb:
+        condition: service_healthy
+
+volumes:
+  tg_data:
+  tg_static_volume:
+  tg_media_volume:
+
+networks:
+  tg-internal:
+    internal: true
+  tg:
+    external: true # Tells Docker Compose this network already exists
+

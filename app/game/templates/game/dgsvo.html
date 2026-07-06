@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}{{title}}{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+<div class="w3-col w96percent">
+{% endif %}
+
+<div class="w3-container w3-padding-small ehc-blue-2 w3-margin-top w3-margin-bottom w3-center"><h1>Datenschutzerklärung</h1></div>
+<!-- {% if uname %}
+<p>Hallo {{ uname }},</p>
+{% endif %} -->
+
+<p>Die Datengrundschutzverordnung (DGSVO) verpflichtet auch private Webseitenbetreiber, Ihre Besucher darüber zu informieren, 
+<ul>
+<li>welche personenbezogenen Daten während eines Webseitenbesuches erhoben und gespeichert werden</li>
+<li>wie diese weiterverwendet werden und</li>
+<li> ob, wie und an wen die erhobenden Daten weitergegeben werden.</li>
+</ul>
+
+Das möchte ich hier tun, also nimm Dir bitte 5min Zeit und lies Dir die nachfolgenden Informationen aufmerksam durch.
+</p>
+<p>
+Aus technischen Gründen, insbesondere zur Gewährleistung eines sicheren und stabilen Internetauftritts, werden Daten durch Deinen Internet-Browser an mich übermittelt und gespeichert.
+Hierzu zählen insbesondere:
+<ul>
+    <li>Typ und Version des Internetbrowsers</li>
+    <li>Informationen über das Betriebssystem Deines PC, Macs oder Smartphones</li>
+    <li>die Website, von der aus Du auf http://tippspiel.dynamop.de gewechselt bist (Referrer URL)</li>
+    <li>die Website(n) des Tippspiels, die Du besucht</li>
+    <li>Datum und Uhrzeit des jeweiligen Zugriffs</li>
+    <li>sowie die IP-Adresse des Internetanschlusses, von dem aus die Nutzung des Tippspiels erfolgt</li>
+</ul>
+
+Diese Verbindungsdaten werden getrennt von den Informationen des Tippspiels in einem Logfile gespeichert und automatisch nach 90 Tagen gelöscht. 
+Die Daten werden nicht an Dritte weitergeben; lediglich ich habe Zugriff.</p>
+
+<p>Ich verwende für das Tippspiel Session-Cookies. Cookies sind kleine Textdateien oder andere Speichertechnologien, 
+die durch den von Dir eingesetzten Internet-Browser auf Deinem PC, Mac oder Smartphone ablegt und gespeichert werden. 
+Diese Cookies enthalten benutzerspezifische Session Informationen um den Zugriff auf das Tippspiel bequemer zu machen. 
+Ich verwende keinerlei Cookies von Drittanbietern.</p>
+<p>Die Installation von Cookies kann durch eine Einstellung im Internet-Browser verhindert oder eingeschränkt werden. Ebenfalls können bereits gespeicherte Cookies jederzeit 
+gelöscht werden.</p><p><a href="http://lmgtfy.com/?q=wie+l%C3%B6sche+ich+cookies">Weitere Informationen</a></p>
+<p>Für das Tippspiel wird ein Benutzerkonto benötigt. Zu einer Registrierung werden die folgenden Daten von Dir benötigt:
+<ul>
+    <li>dein Name</li>
+    <li>ein Passwort</li>
+    <li>eine E-Mail Adresse</li>
+    <li>eine Mobilfunknummer (für die WhatsApp-Nachrichten)</li>
+    <li>optional eine Threema-ID (für Threema-Nachrichten)</li>
+</ul>
+
+Diese Informationen werden für jeden Benutzer separate in einer Datenbank abgelegt. Das Passwort wird nicht in Klartext sondern "gehashed" und "gesalzen" abgespeichert.</p>
+<p><strong>Ein Hinweis für die Damen und Herren, die diese Zeilen lesen um mich eventuell abzumahnen.:</strong><br>Nein, die Benutzerpassworte werden NICHT verschlüsselt gespeichert. 
+Wenn Sie mir daraus einen Strick drehen wollen bitte sehr, aber benutzen sie bitte Google und informieren Sie sich über den Unterschied zwischen Verschlüsselung und 
+Einweg-Hash Funktion, <strong>bevor</strong> Sie sich die Mühe machen, mich anzuschreiben.</p>
+
+<p>Darüber hinaus werden natürlich die Tipps eines jeden Teilnehmers gespeichert. Diese sind für jeden Benutzer des Tippspiels sichtbar und werden durch das Tippspiel für die 
+Punkteermittlung verarbeitet.</p>
+
+<p>Alle benutzerspezifischen Daten werden lediglich für das Tippspiel verwendet und mit niemandem geteilt. Eine Löschung der Daten kann jederzeit durch eine formlose Email 
+veranlasst werden.</p>
+
+<p>Verantwortlicher Anbieter dieses Tippspiels im datenschutzrechtlichen Sinne bin ich selbst.
+<img src="/static/img/contact.png" alt="Kontaktdaten">
+</p>
+<p><strong>Noch ein Hinweis für die Damen und Herren Abmahnanwälte:</strong><br>
+Vielen Dank, dass Sie sich die Mühe gemacht haben, bis hierher zu lesen. Wie Sie vielleicht festgestellt haben, versuche ich in dieser Datenschutzerklärung ohne Hinweise auf 
+spezielle Artikel oder Passagen der DSGVO auszukommen. Ich halte es für sinnvoller, den Besuchern meiner Webseiten möglichst einfach und transparent zu erklären:
+<ul>
+    <li>welche Daten ich von Ihnen speichere</li>
+    <li>wie ich diese Daten verwende</li>
+    <li>wer auf diese Daten Zugriff hat</li>
+    <li>wie und mit wem diese Daten geteilt werden</li>
+</ul>
+Ich glaube zudem nicht, dass es in der heutigen Zeit möglich ist, eine 100 Prozent rechtskonforme Datenschutzerklärung zu erstellen. Wäre dies möglich, würde es Leute wie Sie
+nicht geben. Sollten Sie der Meinung sein, dass in meiner Datenschutzerklärung wichtige Informationen fehlen, freue ich mich über konstruktive Vorschläge zur Nachbesserung. 
+Angehängte Kostenaufstellungen für Ihren Aufwand werde ich allerdings nicht begleichen, also machen Sie sich bitte nicht erst die Mühe, diese zu erstellen.</p>
+
+{% if uname %}
+{% if request.get_full_path != '/game/dgsvo' %}
+<p><strong>Für die Teilnehmer des Tippspiels:</strong><br>Ich bitte Euch durch Klicken des "Ich akzeptiere" - Buttons um Einverständnis zur Erhebung, Speicherung und Weiterverarbeiten der oben aufgeführten Daten. 
+Anderenfalls könnt Ihr das Tippspiel leider nicht mehr benutzen.</p>
+<p>
+<form name="Settings" action="/game/dgsvo" method="post" accept-charset="utf-8">
+{% csrf_token %}   
+    <button name="result" class="w3-btn ehc-blue-1 w3-margin-bottom ehc-hover-red" type="submit" value="OK">Ich aktzeptiere</button>
+    <button name="result" class="w3-btn ehc-blue-1 w3-margin-bottom ehc-hover-red" type="submit" value="NOK">Ich lehne ab</button>
+    <input type="hidden" name="next" value="{{ request.get_full_path|splarg }}" />
+</form></p>
+{% endif %}
+{% endif %}
+
+<p>Vielen Dank<br>Joern Mewes
+</div>
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+{% endif %}		
+{% endblock %}

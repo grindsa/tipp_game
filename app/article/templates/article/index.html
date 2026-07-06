@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}
+Tippspiel|Presseschau
+
+{% endblock %}
+
+{% block content %}
+<div class="w3-container">
+{% if news %}
+    {% if not request.mobile %}
+    <div id="news">
+    {% endif %}
+    <div id="tagcloud" class="w3-container center w3-border w3-padding">
+    {% for w in wordcloud_list %}
+    {% if request.mobile %} 
+        {% if w.filter %}   
+            <a href="/article?afilter={{w.name}}" class="mobtag{{w.tag}} ehc-text-red">{{w.name}}</a>        
+        {% else %}           
+            <a href="/article?afilter={{w.name}}" class="mobtag{{w.tag}}">{{w.name}}</a>
+        {% endif %}       
+       <!--  <div class="mobtag{{w.tag}}">{{w.name}}</div>  --> 	   
+    {% else %}
+        {% if w.filter %}
+            <a href="/article?afilter={{w.name}}" class="tag{{w.tag}} ehc-text-red">{{w.name}}</a>
+        {% else %}          
+            <a href="/article?afilter={{w.name}}" class="tag{{w.tag}}">{{w.name}}</a>
+        {% endif %}             
+    {% endif %}     
+    {% endfor %}
+    </div>
+   
+    <div class="w3-container center w3-border w3-padding ehc-blue-2 w3-margin-top w3-margin-bottom w3-center"><h2>
+    {% if previous_month_string %}
+	    {% if afilter %}
+             <a href="/article?month={{previous_month_string}}&afilter={{afilter}}"><i class="w3-margin-right fa fa-lg fa-arrow-left"></i></a> 
+		{% else %}		
+             <a href="/article?month={{previous_month_string}}"><i class="w3-margin-right fa fa-lg fa-arrow-left"></i></a> 
+		{% endif %}	
+    {% else %}
+    &nbsp;&nbsp;
+    {% endif %} 
+    &nbsp;&nbsp;{{ month_name }}&nbsp;&nbsp; 
+    {% if next_month_string %}  
+	    {% if afilter %}
+             <a href="{{ request.path }}?month={{next_month_string}}&afilter={{afilter}}"><i class="w3-margin-left fa fa-lg fa-arrow-right"></i></a>		
+		{% else %}
+             <a href="{{ request.path }}?month={{next_month_string}}"><i class="w3-margin-left fa fa-lg fa-arrow-right"></i></a>
+		{% endif %}
+    {% else %}
+    &nbsp;&nbsp;        
+    {% endif %} 
+    </h2></div> 
+    {% for d in sort_week_list %}
+        <div class="w3-container w3-padding-small ehc-blue-3 w3-margin-top w3-margin-bottom w3-center"><h2>{{ d }}</h2></div>
+		<div class="w3-row w3-content">
+        {% for e in sort_dic|lookup:d %}
+            {% if request.mobile %} 
+            <a href="/article/showarticle?id={{e}}"><div class="w3-card w3-third w3-margin-bottom w3-margin-right w3-hover-shadow">
+            {% else %}			
+            <a href="/article/showarticle?id={{e}}"><div class="w3-card w3-col w3-margin-bottom w3-margin-right w3-hover-shadow w300">		
+            {% endif %} 			
+			<header class="w3-container ehc-blue-2">
+                <h2>{{entry_dic|lookup:e|lookup:'title'}}</h2>
+			</header>
+			
+            <div class="w3-container">
+			    <small>Datum: {{entry_dic|lookup:e|lookup:'date'}}<br>Quelle: {{entry_dic|lookup:e|lookup:'source'}}</small>
+                <p>
+                {% if entry_dic|lookup:e|lookup:'preview_picture' %}
+                    <img src="{{entry_dic|lookup:e|lookup:'preview_picture'}}" class="w3-image articleimgcenter" alt="preview">
+                    <br>                    
+                {% endif %}      
+                {{entry_dic|lookup:e|lookup:'content'}}
+                </p>
+			</div>
+            </div></a>
+        {% endfor %}
+		</div>
+    {% endfor %}
+
+    <div class="w3-container center w3-border w3-padding ehc-blue-2 w3-margin-top w3-margin-bottom w3-center"><h2>
+    {% if previous_month_string %}
+	    {% if afilter %}
+             <a href="/article?month={{previous_month_string}}&afilter={{afilter}}"><i class="w3-margin-right fa fa-lg fa-arrow-left"></i></a> 
+		{% else %}		
+             <a href="/article?month={{previous_month_string}}"><i class="w3-margin-right fa fa-lg fa-arrow-left"></i></a> 
+		{% endif %}	
+    {% else %}
+    &nbsp;&nbsp;
+    {% endif %} 
+    &nbsp;&nbsp;{{ month_name }}&nbsp;&nbsp; 
+    {% if next_month_string %}  
+	    {% if afilter %}
+             <a href="{{ request.path }}?month={{next_month_string}}&afilter={{afilter}}"><i class="w3-margin-left fa fa-lg fa-arrow-right"></i></a>		
+		{% else %}
+             <a href="{{ request.path }}?month={{next_month_string}}"><i class="w3-margin-left fa fa-lg fa-arrow-right"></i></a>
+		{% endif %}
+    {% else %}
+    &nbsp;&nbsp;        
+    {% endif %} 
+    </h2></div>
+    
+    </div>
+
+{% endif %}
+
+{% if twitter %}
+
+    {% if request.mobile %}
+    <div id="twittermobile">
+    {% else %}
+    <div id="twitter">
+   {% endif %}
+   
+    <div id="twtagcloud" class="w3-container center w3-border w3-padding">
+    {% for w in twittercloud_data %}
+        <a href="/article?twitter=1&tweet_filter={{w.name}}" class="mobtag{{w.tag}}">{{w.name}}</a>   
+    {% endfor %}
+    </div>
+   
+<div class="w3-container ehc-red w3-padding">Twitter-Timeline: Eisbaeren_B</div>
+{% for t in tweet_list %}
+<div class="w3-container w3-padding w3-border w3-section ehc-grey-1">
+<b>{{t|lookup:'screen_name'}}</b>
+{% autoescape off %}
+{{t|lookup:'text'}}
+{% endautoescape %}
+</div>
+{% endfor %}
+</div>
+{% endif %}
+</div>
+{% endblock %}
+

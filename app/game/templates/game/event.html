@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}{{title}}{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w25percent">&nbsp;</div>
+<div class="w3-col w50percent">
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+<div class="w3-col w96percent">
+{% endif %}
+
+<div class="w3-container w3-padding-small ehc-blue-2 w3-section w3-center"><h1>&Ouml;ffentliche Trainigszeiten und Veranstaltungen</h1></div>
+
+<p>Stand: {{lupdate}}</p>
+
+{% if request.mobile %}
+<table id="htable" class="w3-table w3-striped w3-border w3-bordered w3-section w3-tiny">
+{% else %}
+<table id="htable" class="w3-table w3-striped w3-border w3-bordered w3-section">
+{% endif %}
+
+<tr>
+   <th>Datum</th>
+   <th>Uhzeit</th>
+   <th>Ort</th>
+   {% if request.mobile %} 
+   <th>Event</th>   
+   {% else %}   
+   <th>Veranstaltung</th>
+   {% endif %}  
+</tr>
+
+{% for e in event_list %}
+<tr>
+    <td>{{e.date_human}}</td>
+    <td>{{e.time_human}}</td>
+    <td>{{e.location}}</td>	
+    {% autoescape off %}	
+    <td>{{e.event}}</td>
+   {% endautoescape %}	
+</tr>
+{% endfor %}
+</table>
+</div>
+
+{% if request.mobile == False %}
+<div class="w3-col w25percent"></div>
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+{% endif %}	
+{% endblock %}

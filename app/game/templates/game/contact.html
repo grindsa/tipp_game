@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}{{title}}{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+<div class="w3-col w96percent">
+{% endif %}
+
+<div class="w3-container w3-padding-small ehc-blue-2 w3-margin-top w3-margin-bottom w3-center"><h1>Kontakt</h1></div>
+
+<script type="text/javascript">function toggle(control){
+	var elem = document.getElementById(control);
+	
+	if(elem.style.display == "none"){
+		elem.style.display = "block";
+	}else{
+		elem.style.display = "none";
+	}
+}</script>
+
+
+<div class="w3-container">Bei jeglicher Art von Fragen, Kommentaren, Verbesserungsvorschl&auml;gen u.&auml; einfach Bescheid sagen. Verbesserungsvorschl&auml;ge am besten per <a href="/game/frf">Formular</a> erfassen, dann werden diese auch ber&uuml;cksichtigt.
+
+<br><br>Mann oder Frau erreichen mich jederzeit per Email <a href="mailto:&#106;&#111;&#101;&#114;&#110;&#046;&#109;&#101;&#119;&#101;&#115;&#064;&#103;&#109;&#120;&#046;&#110;&#101;&#116;">&#106;&#111;&#101;&#114;&#110;&#046;&#109;&#101;&#119;&#101;&#115;&#064;&#103;&#109;&#120;&#046;&#110;&#101;&#116;</a>, Skype (joern_73) oder Threema (DBUF47V8). Bei auftretenden Fehlern bitte ebenfalls sofort Bescheid sagen.
+
+<br><br>Danke, J&ouml;rn</div>
+
+<h1 class="w3-container center">Frequently asked questions (FAQ)</h1>
+
+<ul class="faq">
+
+    <li><a href="javascript:toggle('id1')"><i class="fa fa-lg fa-plus-circle"></i> Ist das ein offizielles Tippspiel der Eisbären?</a><br>
+        <div id="id1" style="display: none">Nein. Außer der Tatsache, daß ich Eisbärenfan und Dauerkartenbesitzer bin, habe ich nichts mit der Eisbärenorganisation zu tun. Ich kann noch nicht mal richtig Schlittschuhlaufen.
+    </div></li>
+
+	<li><a href="javascript:toggle('id2')"><i class="fa fa-lg fa-plus-circle"></i> Kostet das das Tippspiel/eine Tippgruppe Geld?</a><br>
+        <div id="id2" style="display: none">Die Benutzung des Tippspiels ist kostenlos. Tippgruppen werden ebenfalls kostenlos eingerichtet.
+    </div></li>
+	
+	<li><a href="javascript:toggle('id3')"><i class="fa fa-lg fa-plus-circle"></i> Was kann ich gewinnen/Was passiert, wenn ich gewinne?</a><br>
+        <div id="id3" style="display: none">Sagen wir es mal so: von mir gibt es nichts  außer einen Glückwunsch zum Sieg nichts weiter. Was ihr innerhalb Eurer Tippgemeinschaft ausmacht, ist Eure Sache.
+    </div></li>	
+
+	<li><a href="javascript:toggle('id4')"><i class="fa fa-lg fa-plus-circle"></i> Wie sind die Tipp-Regeln?</a><br />
+        <div id="id4" style="display: none"> Die Regeln findest du <a href="/game/rules">hier</a>. Die Punktevergabe kann pro Tippgruppe festgelegt werden.
+    </div></li>	
+
+	<li><a href="javascript:toggle('id5')"><i class="fa fa-lg fa-plus-circle"></i> Warum muss ich eine Emailadresse bei der Registrierung angeben?</a><br>
+        <div id="id5" style="display: none"> Wir benötigen zur Aktivierung des Benutzeraccounts eine gültige Email-Adresse für die Bestätigungsemail. Außerdem wird eine Email-Adresse für die Rücksetzung des Kennwortes benötigt.
+    </div></li>	
+	
+	<li><a href="javascript:toggle('id6')"><i class="fa fa-lg fa-plus-circle"></i> Ich kann mich nach der Registrierung nicht anmelden !! 1111...</a><br>
+        <div id="id6" style="display: none"> Ich liebe genau solche Emails oder Nachrichten. Besonders nachts... Im 2 Minutentakt... Bitte Benutzernamen und Passwort noch mal &uuml;berpr&uuml;fen. Insbesondere auf Mobilger&auml;ten funkt oft die Rechtschreibkorrektur dazwischen. <b>Wichtig:</b> Gross/Kleinschreibung beachten, besonders beim Benutzernamen.
+    </div></li>	
+
+	<li><a href="javascript:toggle('id7')"><i class="fa fa-lg fa-plus-circle"></i> Kann ich Mitglied von mehreren Tippgruppen sein?</a><br>
+        <div id="id7" style="display: none"> Ja, das ist möglich. Die Zuordnung des Kontos zu einer Tippgruppe erfolgt über die <a href="/game/edit_settings">Benutzereinstellungen</a>. Man kann aber nur einen Tip pro Spieltag für alle Gruppen in denen man Mitglied ist, abgeben.
+    </div></li>	
+	
+	<li><a href="javascript:toggle('id8')"><i class="fa fa-lg fa-plus-circle"></i> Meine Mittipper sehen mich nicht in Ihrer Tippgruppe?</a><br>
+        <div id="id8" style="display: none"> Daf&uuml;r kann es zwei Gr&uuml;nde geben:
+		<ul><li>Du hast noch nicht getippt. Tippen geht am schnellsten &uuml;ber die <a href="/game/tip">Quicktipp Option</a></li>
+		<li>Du bist noch keiner Tippgruppe zugeordnet. Das muss &uuml;ber die  <a href="/game/edit_settings">Benutzereinstellungen</a> erfolgen.</ul>
+    </div></li>	
+	
+	<li><a href="javascript:toggle('id9')"><i class="fa fa-lg fa-plus-circle"></i> Wie kann ich eine neue Tippgruppe einrichten?</a><br>
+        <div id="id9" style="display: none"> Eine neue Tippgruppe (oder Tippgemeinschaft) kann per Email an  <a href="mailto:&#106;&#111;&#101;&#114;&#110;&#046;&#109;&#101;&#119;&#101;&#115;&#064;&#103;&#109;&#120;&#046;&#110;&#101;&#116;">&#106;&#111;&#101;&#114;&#110;&#046;&#109;&#101;&#119;&#101;&#115;&#064;&#103;&#109;&#120;&#046;&#110;&#101;&#116;</a> beantragt werden.  Es werden die folgenden Informationen benötigt:
+		<ul>
+			<li>Name der Tippgruppe</li>
+            <li>Emailadresse des Gruppenadmins</li>
+            <li>WhatsApp-ID der Gruppe: (optional)</li>
+            <li>Regeln für die Punktevergabe:
+			<ul>
+                <li>Punkte für „Sieg/Niederlage richtig“</li>
+                <li>Punkte für „richtigeTordifferenz“</li>
+                <li>Punkte für „richtiger Endstand“</li>
+                <li>Punkte für „7:2“</li> 
+		    </ul>
+		</ul>	
+    </div></li>	
+
+	<li><a href="javascript:toggle('id10')"><i class="fa fa-lg fa-plus-circle"></i> Was ist/ was macht der Heimspielcounter?</a><br>
+        <div id="id10" style="display: none"> Der Heimspielcounter zweigt die Tage bis zum n&auml;chsten Eisb&auml;renspiel an. Da es einige Mitglieder meiner Tippgruppe (inclusive mir) es nicht so mit Kalendertagen haben, wird die Zeit bis zum n&auml;chsten Heimspiel anhand eines einfachen, leicht nachvollziehbaren Ergeigniss bestimmt. Der Heimspielcounter kann &uuml;ber die <a href="/game/edit_settings">Benutzereinstellungen</a> aktiviert werden. Der Text kann nicht ge&auml;ndert werden.
+    </div></li>	
+	
+	<li><a href="javascript:toggle('id11')"><i class="fa fa-lg fa-plus-circle"></i> Was ist die EBB-Presseschau und warum machst du dir diesen Aufwand</a><br>
+        <div id="id11" style="display: none"> Die <a href="/article/">EBB-Presseschau</a> ist ein automatisch erstelltes Archiv von Artikeln der Berliner Presse (Berliner Zeitung, Tagesspiegel, BZ, Kurier) &uuml;ber das beste Eishockeyteam der Liga. Grundlage sind die RSS-Feeds der vier Zeitschriften, die mittles <a href="http://feedly.com">Feedly</a> aggregiert und per <a href="http://www.wallabag.org">Wallabag</a> aufbereitet werden.
+		Ich habe diesen Feed eingerichtet weil:
+		<ul>
+		    <li>ich nicht das Geld und die Zeit habe, mir t&auml;glich alle vier Zeitungen zu kaufen und zu lesen</li>
+			<li>Alle Zeitschrifte die Daten "frei Haus" liefern</li>
+			<li>ich mich nicht m&uuml;hselig durch mittelm&auml;ssige, werbebanner-optimierte mobile Webseiten klicken muss</li>
+			<li>ich mir per <a href="http://wallabag.org">Wallabag</a> ein epub generieren und an meinen Kindle schicken kann</li>
+			<li>Ich mitbekommen habe, daß einige der Zeitschriften <span class="linethrough">in der Vergangenheit Artikel klammheimlich sinnentstellend abge&auml;ndert haben </span>im Rahmen ihrer journerlistischen Verantwortung gegen&uuml;ber Ihrer Leserschaft nachbearbeitet haben.</li>
+		</ul>
+    </div></li>		
+	
+	<li><a href="javascript:toggle('id12')"><i class="fa fa-lg fa-plus-circle"></i> Ich kriege bei „…“ eine Fehlermeldung / ... geht nicht. Was muss ich tun?</a><br>
+        <div id="id12" style="display: none"> Bitte melde den Fehler mit einer kurzen Beschreibung per Email an <a href="mailto:&#106;&#111;&#101;&#114;&#110;&#046;&#109;&#101;&#119;&#101;&#115;&#064;&#103;&#109;&#120;&#046;&#110;&#101;&#116;">&#106;&#111;&#101;&#114;&#110;&#046;&#109;&#101;&#119;&#101;&#115;&#064;&#103;&#109;&#120;&#046;&#110;&#101;&#116;</a>
+    </div></li>	
+	
+</ul>
+
+<div class="w3-container">
+<footer>
+<p><a href="/game/changelog">Changelog</a><p>
+<p>
+<small>Dynamop Tippspiel ©2017 Joern Mewes</small>
+</p>
+</footer>
+</div>
+</div>
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+{% endif %}		
+{% endblock %}

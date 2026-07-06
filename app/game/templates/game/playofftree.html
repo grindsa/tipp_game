@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}{{title}}{% endblock %}
+
+{% block extrahead  %}
+   <link rel="stylesheet" href="/static/css/pbracket.css" type="text/css" />
+{% endblock %}
+
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+<div class="w3-col w96percent">
+{% endif %}
+
+<div class="w3-container w3-padding-small ehc-blue-2 w3-margin-top w3-margin-bottom w3-center"><h1>
+{% if season_prev %}
+<a href="/game/playofftree?season_id={{season_prev}}"><i class="w3-margin-right fa fa-arrow-left">&nbsp;</i></a>
+{% endif %}
+{{title}}
+{% if season_next %}
+<a href="/game/playofftree?season_id={{season_next}}"><i class="w3-margin-left fa fa-arrow-right">&nbsp;</i></a></h1>
+{% endif %}
+
+</h1></div>
+
+    <section id="bracket">
+    <div class="split">
+    {% for round in playoff_series_list  %}
+        <div class="round {{round.class}}">     
+            <div class="round-details">{{round.name}}</div>  
+            {% for match in round.series  %}     
+            <ul class="matchup">
+                {% if match.home_winner %}
+                <li class="team_win"><img src="{{match.home_logo}}" alt="{{match.home_name}}" width="20"> {{match.home_name}}<span class="w3-tiny"> ({{match.home_ranking}})</span><span class="pscore">{{match.home_wins}}</span></li>
+                    {% if match.guest_logo %}  
+                <li class="team"><img src="{{match.guest_logo}}" alt="{{match.guest_name}}" width="20"> {{match.guest_name}}<span class="w3-tiny"> ({{match.guest_ranking}})</span><span class="pscore">{{match.guest_wins}}</span></li>                 
+                    {% else %} 
+                <li class="team">&nbsp;</li>                    
+                    {% endif %} 
+                {% elif match.guest_winner %}        
+                <li class="team"><img src="{{match.home_logo}}" alt="{{match.home_name}}" width="20"> {{match.home_name}}<span class="w3-tiny"> ({{match.home_ranking}})</span><span class="pscore">{{match.home_wins}}</span></li>
+                <li class="team_win"><img src="{{match.guest_logo}}" alt="{{match.guest_name}}" width="20"> {{match.guest_name}}<span class="w3-tiny"> ({{match.guest_ranking}})</span><span class="pscore">{{match.guest_wins}}</span></li>                 
+                {% else %}
+                    {% if match.home_logo %}                
+                <li class="team"><img src="{{match.home_logo}}" alt="{{match.home_name}}" width="20"> {{match.home_name}}<span class="w3-tiny"> ({{match.home_ranking}})</span><span class="pscore">{{match.home_wins}}</span></li>
+                    {% else %} 
+                <li class="team">&nbsp;</li>                    
+                    {% endif %}   
+                    {% if match.guest_logo %}                        
+                <li class="team"><img src="{{match.guest_logo}}" alt="{{match.guest_name}}" width="20"> {{match.guest_name}}<span class="w3-tiny"> ({{match.guest_ranking}})</span><span class="pscore">{{match.guest_wins}}</span></li> 
+                    {% else %} 
+                <li class="team">&nbsp;</li>                    
+                    {% endif %}                
+                {% endif %}               
+            </ul>      
+            {% endfor %}
+        </div>
+    {% endfor %}
+    </div> 
+    </section>
+
+</div>
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+{% endif %}		
+{% endblock %}

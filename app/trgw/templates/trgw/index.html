@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}
+TRGW|Index
+{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w05percent">&nbsp;</div>
+<div class="w3-col w90percent">
+{% endif %}
+
+{% if request_type == 'post' %}
+{% for key,val in data_dic.items %}
+     <b>{{key}}</b>: {{val}}<br>
+{% endfor %}
+{% else %}
+<div class="w3-container ehc-blue-1">
+  <h1>Threema example form</h1>
+</div>
+
+<form class="w3-container w3-border" action="/trgw/" method="post" accept-charset="utf-8">
+    <label for="id_from">from:</label>
+	<input class="w3-input" id="id_from" name="from" type="text" />
+
+    <label for="id_to">to:</label>
+    <input class="w3-input" id="id_to" name="to" type="text" />
+
+    <label for="id_messageId">messageId:</label>
+	<input class="w3-input" id="id_messageId" name="messageId" type="text" />
+
+	<label for="id_date">date:</label>
+	<input class="w3-input" id="id_date" name="date" type="text" />
+
+	<label for="id_nonce">nonce:</label>
+	<input class="w3-input" id="id_nonce" name="nonce" type="text" />
+
+	<label for="id_box">box:</label>
+	<input class="w3-input" id="id_box" name="box" type="text" />
+
+	<label for="id_mac">mac:</label>
+	<input class="w3-input" id="id_mac" name="mac" type="text" />
+	
+    <input class="w3-margin-top w3-btn ehc-blue-1 w3-margin-bottom ehc-hover-red" type="submit" value="submit"/></li>
+			
+		</ol>	 
+</form>	
+</div>	
+{% endif %}
+
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w05percent">&nbsp;</div>
+{% endif %}
+{% endblock %}
+

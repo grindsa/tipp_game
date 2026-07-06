@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}index{% endblock %}
+
+{% block content %}
+
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w10percent">&nbsp;</div>
+<div class="w3-col w80percent">
+{% endif %}
+
+{% if error %}
+<div class="w3-container w3-padding-16 ehc-red w3-margin-top">Tipp abgewiesen</div>
+<div class="w3-container w3-padding-16 w3-border"> {{ error }}</div>
+
+{% else %}
+    {% if new_entry %}
+        <div class="w3-container w3-padding-16 ehc-blue-1 w3-margin-top">Tipp hinzugefügt am {{ date_request }} um {{ time_request }}.</div>
+    {% else %}
+        <div class="w3-container w3-padding-16 ehc-blue-1 w3-margin-top">Tipp geändert am {{ date_request }} um {{ time_request }}.</div>
+    {% endif %}
+	
+    <table class="w3-table w3-border">
+    <tr>
+        <td>Spieltag:</td>
+	    <td colspan="5">{{ matchday }}</td>
+    </tr>
+    <tr>
+        <td>Datum:</td>
+        <td colspan="5">{{ date }}</td>
+    </tr>
+    <tr>
+        <td>Spiel:</td>
+        <td><img src="{{ht_logo}}" alt="{{ht_name}}" width="25"></td>
+	    <td>{{ht_name}}</td>
+        <td> vs </td>
+	    <td><img src="{{gt_logo}}" alt="{{gt_name}}" width="25"></td>
+	    <td>{{gt_name}}</td>
+    </tr>
+
+    <tr>
+        <td>Tipp:</td>
+        <td colspan="5">{{ tip }}</td>
+    </tr>
+    
+    {% if src %}
+    <tr>
+        <td colspan="6"><a href="{{ src }}"><input class="w3-btn ehc-blue-1 w3-margin-bottom ehc-hover-red" type="submit" value="Zurück zur vorherigen Seite"/></a></td>
+    </tr>
+    {% endif %}
+    
+    </table>
+{% endif %}
+
+</div>
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w10percent">&nbsp;</div>
+{% endif %}	
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}
+{% if user.is_authenticated %}
+Tippspiel|Highscore
+{% else %}
+Tippspiel|Welcome
+{% endif %}
+{% endblock %}
+
+{% block content %}
+
+{% if request.mobile == False %}
+<div class="w3-col w20percent">&nbsp;</div>
+<div class="w3-col w60percent">
+{% else %}
+<div class="w3-col w05percent">&nbsp;</div>
+<div class="w3-col w90percent">
+{% endif %}
+
+{% if user.is_authenticated %}
+<div class="w3-container">
+<table id="itable" class="w3-table w3-striped w3-border w3-bordered auto_width center w3-centered">
+
+<tr>
+    <th></th>
+    <th class="left">Name</th>
+	<th>Punkte</th>
+	<th><div class="tooltip">RT<span class="tooltiptext">Richtige Tipps</span></div></th>
+	<th><div class="tooltip">VT<span class="tooltiptext">Volltreffer</span></div></th>
+	<!-- <th colspan="2">&Delta;</th> -->
+    <th colspan="2">&nbsp;</th>
+    
+</tr>
+
+{% for uid in sort_list %}
+<tr>
+    <td>
+    {% if forloop.counter == 1 %}    
+	<div class="tooltip"><img src="/static/img/winner.png" class="w3-image" width="20" class="ehc_flag" alt="Spitzenreiter"><span class="tooltiptext">Spitzenreiter Spitzenreiter he he...</span></div>    
+	{% elif  user_dict|lookup:uid|lookup:'rl' %}
+	<div class="tooltip"><img src="/static/img/rlantern.png" class="w3-image" width="20" class="ehc_flag" alt="Rote Laterne"><span class="tooltiptext">Rote Laterne...</span></div>
+    {% else %}
+    {{ forloop.counter }}    
+	{% endif %}         
+    </td>   
+    <td class="left">
+    <!-- <a href="/game/mytips?uid={{uid}}">{{user_dict|lookup:uid|lookup:'user__username'}}</a> -->
+    <a href="/game/mytips?uid={{uid}}">{{user_dict|lookup:uid|lookup:'username'}}</a>    
+	{% if not user_dict|lookup:uid|lookup:'pg' %}
+	<div class="tooltip"><img src="/static/img/ehc-pokal.png" width="10" class="ehc_flag" alt="EHC-Flagge"><span class="tooltiptext">Niemals gegen den Verein getippt...</span></div>
+	{% endif %}   
+	</td>
+	<td>{{score_dict|lookup:uid}}</td>
+    <td>{{user_dict|lookup:uid|lookup:'rt'}}</td>
+    <td>{{user_dict|lookup:uid|lookup:'vt'}}</td>
+    {% if user_dict|lookup:uid|lookup:'lwd' > 0 %}
+        <td><i class="fa fa-arrow-up w3-small"></i></td><td class="right"><span class="w3-tiny">{{user_dict|lookup:uid|lookup:'lwd'}}</span></td>   
+    {% elif user_dict|lookup:uid|lookup:'lwd' == 0 %}       
+        <td><i class="fa fa-arrow-right w3-small"></i></td><td></td>
+    {% elif user_dict|lookup:uid|lookup:'lwd' < 0  %}
+       <td><i class="fa fa-arrow-down w3-small"></i></td><td class="right"><span class="w3-tiny">{{user_dict|lookup:uid|lookup:'alwd'}}</span></td>    
+    {% else %}
+       <td colspan="2"></td>
+	{% endif %}  
+</tr>
+{% endfor %}
+</table>
+
+</div>
+<div class="w3-container w3-center w3-margin-top"><a href="/game/getreport?group={{group}}">Download Excel report</a></div>
+</div>
+{% else %}
+{% include "game/landing.html" %}
+{% endif %}
+
+{% if request.mobile == False %}
+<div class="w3-col w20percent"></div>
+{% else %}
+<div class="w3-col w05percent">&nbsp;</div>
+{% endif %}
+
+{% endblock %}
+

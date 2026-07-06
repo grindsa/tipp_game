@@ -1,0 +1,16 @@
+xlsxwriter
+bs4
+libnacl
+django>=4.2,<5
+django-simple-captcha
+django-mobi2
+icalendar
+lxml
+feedparser
+requests
+dateparser
+shapely
+django_otp
+jsonfield
+gunicorn>=21.0
+mysqlclient>=2.2.0

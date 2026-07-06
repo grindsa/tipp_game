@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}{{ block.super }} - Account activated{% endblock %}
+
+{% block toggle_login %}{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w05percent">&nbsp;</div>
+<div class="w3-col w90percent">
+{% endif %}
+
+<p><b>Registrierung des Kontos {{ user }} abgeschlossen.</b></p>
+Das Konto ist jetzt akiv und du kannst dich anmelden.<br><br>
+<b>Wichtig:</b> Bitte ordne dir eine Tippgemeinschaft in den <a href="/game/edit_settings">Profileigenschaften</a> deines Kontos zu.
+
+Viel Spa&szlig; beim Tippen...
+
+</div>
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w05percent">&nbsp;</div>
+{% endif %}		
+{% endblock %}

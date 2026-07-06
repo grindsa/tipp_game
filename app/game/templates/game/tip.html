@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}{{ block.super }} - Tipp{% endblock %}
+
+{% block toggle_login %}{% endblock %}
+
+{% block content %}
+
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+<div class="w3-col w96percent">
+{% endif %}
+
+{% if error %}
+<div class="w3-container w3-padding-16 ehc-red w3-margin-top">Tipp abgewiesen</div>
+<div class="w3-container w3-padding-16 w3-border"> {{ error }}</div>
+<div class="w3-container w3-padding-16 ehc-blue-1 w3-margin-top">Tipp korrigieren</div>
+{% else %}
+<div class="w3-container w3-padding-16 ehc-blue-1 w3-margin-top">Tipp abgeben</div>
+{% endif %}
+
+{% if 42sum != 0 %}
+<div class="w3-container w3-padding w3-amber">Bitte daran denken: Ein 4:2 Tip ist im Vorfeld mit Josi abzustimmen...</div>
+{% endif %}
+
+<div class="w3-container w3-border w3-padding-16">
+    <form action="/game/process_tip" method="post" accept-charset="utf-8">
+		{% if matchday %}
+            <table id="tip" class="w3-table auto_width center">
+            <tr>
+                <td>Spieltag:</td>
+                <td colspan="5">{{matchday}}</td>
+            </tr>
+            <tr>
+                <td>Datum:</td>
+                <td colspan="5">{{date_human}}</td>
+            </tr>
+		    {% if users %}
+	        <tr>
+	              <td>für</td>
+				  <td colspan="5">
+				  <select class="w3-select w3-border auto_width" name="user_id">
+				  {% for u in users %}
+				      {% if request.user.id == u.id %}
+	                      <option value="{{u.id}}" selected>{{u.username}}</option>				      
+					  {% else %}
+                          <option value="{{u.id}}">{{u.username}}</option>
+                      {% endif %}						  
+				  {% endfor %}
+                  </select>				  
+				  </td>
+	        </tr>
+	        {% endif %}
+            <tr>
+                <td>Spiel:</td>
+                <td><img src="{{ht_logo}}" alt="{{ht_name}}" width="25"></td>
+				<td>{{ht_name}}</td>
+				<td>vs</td>
+				<td><img src="{{gt_logo}}" alt="{{gt_name}}" width="25"></td>
+				<td>{{gt_name}}</td>
+            </tr>
+			{% if kye %}
+            {% if f_line %}             
+			<tr><td></td><td colspan=5 class="w3-tiny"><span class="bu">DEL-Tabelle</span><br>{{f_line}}<br>
+            {% if separator %}  
+            ...<br>
+	        {% endif %}            
+            {{s_line}}</td></tr> 
+	        {% endif %}             
+			<tr>            
+			<td></td>
+			<td colspan="5" class="w3-tiny"><a href="{{kye}}">Spielstatistik {{ht_name}} vs. {{gt_name}}</a></td>
+			</tr>
+			{% endif %}
+		    {% if r1 or r2 %}
+            <tr>
+			    <td><label>Schiedsrichter:</label></td>
+                <td colspan="5">
+				<table class="referee">
+				<tr>
+				    <td class="referee">{{r1}}:</td>
+                    {% if not request.mobile %}					
+				    <td class="referee">{{r1_stats}}</td>
+				    <td class="referee">({{r1_details}})</td>						
+			        {% else %}
+				    <td class="referee">{{r1_details}}</td>		
+                    {% endif %}							
+				</tr>
+				<tr>
+				    <td class="referee">{{r2}}:</td>
+                    {% if not request.mobile %}							
+				    <td class="referee">{{r2_stats}}</td>
+				    <td class="referee">({{r2_details}})</td>							
+			        {% else %}					
+				    <td class="referee">{{r2_details}}</td>		
+                    {% endif %}					
+				</tr>
+				</table></td>				
+            </tr>
+            {% endif %}			
+            <tr>            
+                <td><label>Tip:</label></td>
+                <td colspan="5"><input class="w3-input auto_width w3-border" type="text" name="tip" value="{{ tip }}" size="5" /> <small>Mit Doppelpunkt trennen (Bsp: 4:2).</small></td>
+            </tr>			
+            <tr>
+			    <td><input class="w3-btn ehc-blue-1 w3-margin-bottom ehc-hover-red" type="submit" value="Tip abgeben"/></td>
+                <td colspan="5"></td>
+            </tr>
+            </table>
+            <input type="hidden" name="match_id" value="{{ match_id }}" />
+            {% if src %}            
+            <input type="hidden" name="src" value="{{ src }}" /> 
+            {% endif %}	            
+		{% endif %}
+        {% csrf_token %}
+    </form>
+</div>
+</div>
+	
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+{% endif %}	
+{% endblock %}

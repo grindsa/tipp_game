@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}{{title}}{% endblock %}
+{% block content %}
+
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w05percent">&nbsp;</div>
+<div class="w3-col w90percent">
+{% endif %}
+
+<form class="center" action="/game/frf" method="post" accept-charset="utf-8">
+
+<div class="w3-container w3-padding-16 ehc-blue-1 w3-margin-top">Bitte beschreibe den &Auml;nderungswunsch</div>
+<div class="w3-container w3-border w3-padding-16">
+    <table class="w3-table auto_width center w3-margin-top">
+    <tr>
+        <td>Datum:</td>
+        <td>{{now}}</td>
+    </tr>
+    <tr>
+        <td>Benutzer:</td>
+        <td>{{uname}}</td>
+    </tr>
+	<tr>
+	    <td colspan="2"><textarea name="frf" rows="4" cols="{{area_size}}">...</textarea></td>
+	</tr>
+    <tr>
+	    <td><input class="w3-btn ehc-blue-1 w3-margin-bottom ehc-hover-red" type="submit" value="Eintragen"/></td>
+        <td></td>
+    </tr>	
+	
+	</table>
+{% csrf_token %}
+</div>
+</form>
+
+<table id="htable" class="w3-table w3-striped w3-border w3-bordered center w3-centered w3-margin-top">
+<tr>
+    <th>Datum</th>
+	<th>Text</th>
+	<th>von</th>
+	<th>Version</th>
+</tr>
+
+{% for f in fr_list %}
+<tr class="dualc">
+   {% if f.version %}
+   <td class="s">{{f.date_human}}</td>
+   <td class="s left" style="width:275px">{{f.text}}</td>
+   <td class="s">{{f.user__username}}</td> 
+   <td>{{f.version}}</td>   
+   {% else %}
+   <td>{{f.date_human}}</td>
+   <td class="left" style="width:275px">{{f.text}}</td>
+   <td>{{f.user__username}}</td> 
+   <td>{{f.version}}</td>
+   {% endif %}   
+</tr>
+{% endfor %}
+</table>
+</div>
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w05percent">&nbsp;</div>
+{% endif %}	
+{% endblock %}

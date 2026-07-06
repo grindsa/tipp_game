@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}{{ block.super }} - Konto erstellen{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+<div class="w3-col w96percent">
+{% endif %}
+  
+{% if error %}
+<div class="w3-container w3-padding-16 ehc-red w3-margin-top">Tipp abgewiesen</div>
+<div class="w3-container w3-padding-16 w3-border"> {{ error }}</div>
+{% endif %}
+
+
+
+<script>
+function refresh_captcha() {
+
+    $.getJSON($(this).data('url'), {'refresh_captcha' : 1}, function(json) {
+        $('img[class="captcha"]').attr('src', json['new_cptch_image'])
+        $('#id_captcha_0').val(json['new_cptch_key'])
+        $('#id_captcha_1').val('')
+    });
+};
+
+</script>
+
+<div class="w3-container ehc-blue-1">
+  <h1>Neues Konto erstellen</h1>
+</div>
+	
+<form class="w3-container w3-border" action="#" method="post" accept-charset="utf-8">
+
+			<label for="id_username">Username <small>(Maxinal 30 Zeichen. Buchstaben, Zahlen und @/./+/-/_ erlaubt):</small></label> 
+			<input class="w3-input w3-border w3-margin-bottom" id="id_username" maxlength="30" name="username" type="text" value="{{ username }}" />
+			<label for="id_email w3-border">Email:</label>
+			<input class="w3-input w3-border w3-margin-bottom" id="id_email" maxlength="30" name="email" type="text" value="{{ email }}" />				
+			<label for="id_password1">Password:</label> 
+			<input class="w3-input w3-border w3-margin-bottom" id="id_password1" name="password1" type="password" />
+			<label for="id_password2">Password wiederholen:</label>
+			<input class="w3-input w3-border w3-margin-bottom" id="id_password2" name="password2" type="password" />
+			<label for="id_captcha_1">Captcha:</label>
+			<p>{{ form.captcha }} &nbsp;<a class="btn btn-mini" onclick="refresh_captcha()"><i class="fa fa-lg fa-refresh"></i></a></p>
+			<p><input class="w3-margin-top w3-btn ehc-blue-1 w3-margin-bottom ehc-hover-red" type="submit" value="Erstellen"></p>
+
+      {% csrf_token %}	  
+</form> 
+
+</div>
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+{% endif %}  
+{% endblock %}

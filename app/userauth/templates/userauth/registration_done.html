@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}{{ block.super }} - Login{% endblock %}
+
+{% block toggle_login %}{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w05percent">&nbsp;</div>
+<div class="w3-col w90percent">
+{% endif %}
+	
+<p><b>Registrierung des Kontos {{ username }} erfolgreich.</b></p>
+<p>Wir haben gerade eine Email mit einem Link zur Aktivierung des Kontos an {{ email }} geschickt. Bitte rufe den Link in den n&auml;chsten 48h auf, um das Konto zu aktivieren.<br><br>
+
+Danke...
+</div>
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w05percent">&nbsp;</div>
+{% endif %}	
+{% endblock %}

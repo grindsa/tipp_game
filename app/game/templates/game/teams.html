@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}{{title}}{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w05percent">&nbsp;</div>
+<div class="w3-col w90percent">
+{% endif %}
+
+<table id="itable" class="w3-table w3-striped w3-border w3-bordered auto_width center w3-centered w3-margin-top">
+<tr>
+    <th></th>
+	<th class="left">Name</th>
+	<th>Kurzname</th>
+</tr>
+{% for team in team_list %}
+<tr class="dualc">
+   <td><img src="{{team.logo_url}}" alt="{{team.short_name}}" width="25"></td>
+   <td class="left">{{team.team_name}}</td>
+   <td>{{team.short_name}}</td>
+</tr>
+{% endfor %}
+</table>
+</div>
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w05percent">&nbsp;</div>
+{% endif %}	
+{% endblock %}

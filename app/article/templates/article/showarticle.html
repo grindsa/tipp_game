@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}
+Tippspiel|Presseschau
+
+{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w25percent">&nbsp;</div>
+<div class="w3-col w50percent">
+{% else %}
+<div class="w3-col w05percent">&nbsp;</div>
+<div class="w3-col w90percent">
+{% endif %}
+
+
+<div class="w3-border articledetails">
+{% if error %}
+<header class="w3-container w3-center ehc-red">
+  <h1>{{ error}}</h1>
+</header>
+{% else %}
+<header class="w3-container ehc-blue-1">
+  <h1>{{dic.title}}</h1>
+</header>
+
+<div class="w3-container">
+<p><b>Quelle:</b> <a href="{{dic.url}}">{{dic.domain}}</a></p>
+<p><b>Datum:</b> {{dic.date}}</p>
+
+{% autoescape off %}
+{{dic.content}}
+{% endautoescape %}
+
+{% endif %}
+</div>
+</div>
+</div>
+{% if request.mobile == False %}
+<div class="w3-col w25percent"></div>
+{% else %}
+<div class="w3-col w05percent">&nbsp;</div>
+{% endif %}	
+{% endblock %}
+

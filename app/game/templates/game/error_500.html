@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}500 - Internal server error{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w25percent">&nbsp;</div>
+<div class="w3-col w50percent">
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+<div class="w3-col w96percent">
+{% endif %}
+
+<div class="w3-container w3-padding-small ehc-blue-2 w3-section w3-center"><h1>Our house is on fire...</h1></div>
+
+<div class="w3-container w3-padding-small w3-section w3-center">
+<p>... da kann schon mal was schief gehen. Der Fehler wurde aber protkolliert. Bitte Jörn Bescheid sagen und um Hilfe bitten.</p>
+<p><img class="w3-image" src="/static/img/hof.jpg" alt="500"></p>
+</div>
+</div>
+
+{% if request.mobile == False %}
+<div class="w3-col w25percent"></div>
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+{% endif %}	
+{% endblock %}

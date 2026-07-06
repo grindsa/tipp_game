@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}{{title}}{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+<div class="w3-col w96percent">
+{% endif %}
+
+<div class="w3-half w3-container">
+<div class="w3-container w3-padding-small ehc-blue-2 w3-margin-top w3-margin-bottom w3-center"><h1>Tippverteilung</h1></div>
+
+<table id="itable" class="w3-table w3-striped w3-border w3-bordered auto_width center w3-centered w3-margin-top">
+<tr>
+    <th class="left">Tipp</th>
+	<th>Anzahl</th>
+</tr>
+
+{% for tip in tipd_list %}
+<tr>
+    <td class="left">{{tip}}</td>
+	<td>{{tipd_dic|lookup:tip}}</td>
+</tr>
+
+{% endfor %}
+</table>
+</div>
+
+<div class="w3-half w3-container">
+<div class="w3-container w3-padding-small ehc-blue-2 w3-margin-top w3-margin-bottom w3-center"><h1>Tipperfolg (nach Punkten)</h1></div>
+
+<table id="htable" class="w3-table w3-striped w3-border w3-bordered auto_width center w3-centered w3-margin-top">
+
+<tr>
+    <th class="left">Tipp</th>
+	<th>Gesamt</th>
+	<th>Heim</th>   
+	<th>Auswärts</th>     
+</tr>
+
+{% for tip in tipr_list %}
+<tr>
+    <td class="left">{{tip}}</td>
+	<td>{{tipr_dic|lookup:tip|lookup:'s'}}</td>
+	<td>{{tipr_dic|lookup:tip|lookup:'h'}}</td>   
+	<td>{{tipr_dic|lookup:tip|lookup:'g'}}</td>     
+</tr>
+{% endfor %}
+</table>
+</div>
+</div>
+
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+{% endif %}	
+
+{% endblock %}

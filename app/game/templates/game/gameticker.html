@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}Tippspiel|{{title}}{% endblock %}
+
+{% block extrahead  %}
+    <meta http-equiv="refresh" content="120">
+{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+<div class="w3-col w96percent">
+{% endif %}
+
+<div class="w3-container w3-padding-small ehc-blue-2 w3-section w3-center"><h1><a href="/game/gameticker?match_id={{match_id|add:-1}}"><i class="w3-margin-right fa fa-arrow-left">&nbsp;</i></a>{{ title }}<a href="/game/gameticker?match_id={{match_id|add:1}}"><i class="w3-margin-left fa fa-arrow-right">&nbsp;</i></a></h1></div>
+{% if d_update %}
+<div class="w3-margin-bottom"><span class="w3-tag w3-green w3-round">Live:</span> {{d_update}}</div>
+{% endif %}
+
+<table id="divnav" class="w3-table w3-border center w3-centered w3-border w3-bordered auto_width w3-margin-top w3-small">
+<tr>
+    <th colspan="2">Tore</th>
+    <th>1st</th>
+    <th>2nd</th>
+    <th>3rd</th>
+    <th>OT</th>
+    <th>SO</th>
+</tr>
+<tr>
+    <td><img src="{{gamestat_dic.homeLogo}}" alt="{{gamestat_dic.homeTeam}}" class="fa-lg" width="22"></td>
+    <td>{{gamestat_dic.homeTeam}}</td>    
+    <td>{{gamestat_dic.homeScoredic.1}}</td>
+    <td>{{gamestat_dic.homeScoredic.2}}</td> 
+    <td>{{gamestat_dic.homeScoredic.3}}</td> 
+    <td>{{gamestat_dic.homeScoredic.OT}}</td>    
+    <td>{{gamestat_dic.homeScoredic.GWS}}</td>       
+</tr>
+<tr>
+    <td><img src="{{gamestat_dic.guestLogo}}" alt="{{gamestat_dic.guestTeam}}" class="fa-lg" width="22"></td>
+    <td>{{gamestat_dic.guestTeam}}</td>    
+    <td>{{gamestat_dic.guestScoredic.1}}</td>
+    <td>{{gamestat_dic.guestScoredic.2}}</td> 
+    <td>{{gamestat_dic.guestScoredic.3}}</td> 
+    <td>{{gamestat_dic.guestScoredic.OT}}</td>    
+    <td>{{gamestat_dic.guestScoredic.GWS}}</td>       
+</tr>
+</table>
+
+<div class="w3-margin-top">
+{% if request.path == '/game/gamestats' %}
+    <a href="/game/gamestats?match_id={{match_id}}#divnav" class="w3-button ehc-red-2 ehc-hover-red-2 w3-tiny ">Überblick</a>
+{% else %}
+    <a href="/game/gamestats?match_id={{match_id}}#divnav" class="w3-button ehc-blue-1 ehc-hover-red-2 w3-tiny">Überblick</a>
+{% endif %}
+{% if request.path == '/game/nerdstats' %}
+    <a href="/game/nerdstats?match_id={{match_id}}#divnav" class="w3-button ehc-red-2 ehc-hover-red-2 w3-tiny ">Details</a>
+{% else %}
+    <a href="/game/nerdstats?match_id={{match_id}}#divnav" class="w3-button ehc-blue-1 ehc-hover-red-2 w3-tiny">Details</a>
+{% endif %}
+{% if request.path == '/game/gameticker' %}
+    <a href="/game/gameticker?match_id={{match_id}}#divnav" class="w3-button ehc-red-2 ehc-hover-red-2 w3-tiny ">Live-Ticker</a>
+{% else %}
+    <a href="/game/gameticker?match_id={{match_id}}#divnav" class="w3-button ehc-blue-1 ehc-hover-red-2 w3-tiny">Live-Ticker</a>
+{% endif %}
+{% if request.path == '/article/ticker' %}
+    <a href="/article/ticker/?matchid={{match_id}}#divnav" class="w3-button ehc-red-2 ehc-hover-red-2 w3-tiny">Sportal-Ticker</a>
+{% else %}
+    <a href="/article/ticker/?matchid={{match_id}}#divnav" class="w3-button ehc-blue-1 ehc-hover-red-2 w3-tiny">Sportal-Ticker</a>
+{% endif %}
+</div>
+
+{% if request.mobile %}
+<table id="divnav" class="w3-table w3-border w3-bordered center w3-centered w3-tiny">
+{% else %}
+<table id="divnav" class="w3-table w3-border w3-bordered center w3-centered w3-small">
+{% endif %}
+<tr>
+    <!-- <th>Quelle</th> -->
+	<th colspan="4">&nbsp;</th>
+</tr>
+{% for event in ticker_list %}
+<tr>
+    <td><span class="w3-tag w3-round w3-padding-small {{event.mcolor}}"  style="width:50px">{{ event.mtime}}</span></td>
+    {% if event.mlogo %}
+    <td>
+        <img src="{{event.mlogo}}" alt="logo" width="20">
+    </td>
+    <td>
+        <span class="{{event.mspan}}">{{event.mtitle}}</span>
+    {% if event.minfo %}     
+        <span>{{event.minfo}}</span>
+    {% endif %}
+    </td>
+    <td class="left">
+        <span class="{{event.mspan}}">{{event.mdetail}}</span>    
+    {% if event.mdetailinfo %}
+        {% for ele in event.mdetailinfo %}
+        <span>{{ele}}</span><br>
+        {% endfor %}           
+        {% if event.adddetailinfo %}
+        <span onclick="togglearea({{event.adddetailinfo_id}})" >...</span>
+        <span id="{{event.adddetailinfo_id}}" class="w3-hide">
+            {% for ele in event.adddetailinfo %}
+            {% if ele.class %}
+            <span class="{{ele.class}}">{{ele.data}}</span><br>            
+            {% else %}
+            <span>{{ele.data}}</span><br>
+            {% endif %}            
+            {% endfor %}
+        </span>            
+        {% endif %}        
+    {% endif %}   
+    </td>    
+    {% else %}
+    <td colspan="3">{{event.mtitle}}</td>
+
+    {% endif %} 
+</tr>
+{% endfor %}
+
+</table>
+
+
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+{% endif %}	
+{% endblock %}

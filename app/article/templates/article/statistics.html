@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}
+Tippspiel|Presseschau
+{% endblock %}
+{% block extrahead %}
+    {% if cw_chart %}
+    <script src="/static/js/highcharts.js" type="text/javascript"></script>
+	
+    <script type="text/javascript">
+    $(function () {
+	
+    // Highcharts.getOptions().plotOptions.pie.colors = (function () {
+    //    var colors = [],
+    //        base = Highcharts.getOptions().colors[0],
+    //        i;
+
+    //    for (i = 0; i < 12; i += 1) {
+            // Start out with a darkened base color (negative brighten), and end
+            // up with a much brighter color
+    //        colors.push(Highcharts.Color(base).brighten((i - 3) / 7).get());
+    //    }
+    //    return colors;
+    //}())
+		
+    $('#cw_chart').highcharts(
+        {% autoescape off %}	
+	    {{cw_chart}});
+        {% endautoescape %}
+    });
+		</script>
+		
+    <script type="text/javascript">
+    $(function () {
+    $('#source_chart').highcharts(
+        {% autoescape off %}	
+	    {{source_chart}});
+        {% endautoescape %}
+    });
+		</script>		
+		
+	{% endif %}
+{% endblock %}
+
+
+{% block content %}
+{% if cw_chart %}
+{% if request.mobile %}
+<div id="cw_chart" class="chart" style="width:340px; height:180px"> Chart will be rendered here </div>
+{% else %}
+<div id="cw_chart" class="chart" style="width:600px; height:310px"> Chart will be rendered here </div>
+{% endif %}
+{% endif %}
+
+{% if source_chart %}
+{% if request.mobile %}
+<div id="source_chart" class="chart" style="width:340px; height:180px"> Chart will be rendered here </div>
+{% else %}
+<div id="source_chart" class="chart" style="width:600px; height:310px"> Chart will be rendered here </div>
+{% endif %}
+{% endif %}
+
+
+{% endblock %}
+

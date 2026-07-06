@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}Tippspiel|{{title}}{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+<div class="w3-col w96percent">
+{% endif %}
+
+<div class="w3-container w3-padding-small ehc-blue-2 w3-section w3-center"><h1>{{title}}</h1></div>
+
+{% if error %}
+<div class="w3-container w3-padding-16 ehc-red w3-margin-top">Fehler</div>
+<div class="w3-container w3-padding-16 w3-border"> {{ error }}</div>
+{% else %}
+<div class="w3-container w3-center w3-margin-bottom">Heimspiele in dieser Saison: {{match_num}}</div>
+
+
+<div id="divnav">
+{% if request.path == '/game/dcesb' %}
+    <a href="/game/dcesb#divnav" class="w3-button ehc-red-2 ehc-hover-red-2 w3-tiny">DCESB</a>
+{% else %}
+    <a href="/game/dcesb#divnav" class="w3-button ehc-blue-1 ehc-hover-red-2 w3-tiny">DCESB</a>
+{% endif %}
+{% if request.path == '/game/wonloss' %}
+    <a href="/game/wonloss#divnav" class="w3-button ehc-red-2 ehc-hover-red-2 w3-tiny">Karma</a>
+{% else %}
+    <a href="/game/wonloss#divnav" class="w3-button ehc-blue-1 ehc-hover-red-2 w3-tiny">Karma</a>
+{% endif %}
+</div>
+
+{% if request.mobile %}
+<table id="itable" class="w3-table w3-striped w3-border w3-bordered center w3-centered">
+{% else %}
+<table id="itable" class="w3-table w3-striped w3-border w3-bordered center w3-centered">
+{% endif %}
+
+<tr>
+    <th></th>
+    <th class="left">Name</th>
+	{% if request.mobile %}
+        <th><div class="tooltip">S<span class="tooltiptext">Besuche</span></div></th>
+        <th><div class="tooltip">H<span class="tooltiptext">Heimspiele</span></div></th>	
+        <th><div class="tooltip">A<span class="tooltiptext">Auswärtsspiele</span></div></th>
+        <th><div class="tooltip">Pkt<span class="tooltiptext">Punkte</span></div></th>		
+	{% else %}	
+	    <th>Besuche</th>
+	    <th>Heim</th>
+	    <th>Ausw&auml;rts</th>		
+	    <th>Punkte</th>
+	{% endif %}
+	<th><div class="tooltip">HSQ<span class="tooltiptext">Heimspielquote</span></div></th>
+	<th><div class="tooltip">PPS<span class="tooltiptext">DK-Preis pro Spiel</span></div></th>		
+</tr>
+
+{% for s in sort_list %}
+<tr>
+    <td>
+	{% if presence_dic|lookup:s|lookup:'hsq' > 74 %}
+	<!-- <img class="w3-middle" src="/static/img/crown.png" alt="dcesb" height="12"> -->
+	<i class="fa fa-lg fa-trophy yellow"></i>
+	
+	{% else %}
+	&nbsp;
+	{% endif %}
+	</td>
+    <td class="left"><a href="/game/mypresence?user={{s}}">{{s}}</a></td>
+	<td>{{presence_dic|lookup:s|lookup:'count'}}</td>
+	<td>{{presence_dic|lookup:s|lookup:'hc'}}</td>
+	<td>{{presence_dic|lookup:s|lookup:'ac'}}</td>
+	<td>{{presence_dic|lookup:s|lookup:'score'}}</td>
+	<td>{{presence_dic|lookup:s|lookup:'hsq'}}%</td>	
+	<td>{{presence_dic|lookup:s|lookup:'pps'}}</td>		
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+</div>
+
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+{% endif %}	
+{% endblock %}

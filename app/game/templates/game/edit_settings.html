@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}{{title}}{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w35percent">&nbsp;</div>
+<div class="w3-col w30percent">
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+<div class="w3-col w96percent">
+{% endif %}
+
+<script>
+function SelectMoveRows(SS1,SS2)
+{
+    var SelID='';
+    var SelText='';
+    // Move rows from SS1 to SS2 from bottom to top
+    for (i=SS1.options.length - 1; i>=0; i--)
+    {
+        if (SS1.options[i].selected == true)
+        {
+            SelID=SS1.options[i].value;
+            SelText=SS1.options[i].text;
+            var newRow = new Option(SelText,SelID);
+            SS2.options[SS2.length]=newRow;
+            SS1.options[i]=null;
+        }
+    }
+    SelectSort(SS2);    
+}
+function SelectSort(SelList)
+{
+    var ID='';
+    var Text='';
+    for (x=0; x < SelList.length - 1; x++)
+    {
+        for (y=x + 1; y < SelList.length; y++)
+        {
+            if (SelList[x].text > SelList[y].text)
+            {
+                // Swap rows
+                ID=SelList[x].value;
+                Text=SelList[x].text;
+                SelList[x].value=SelList[y].value;
+                SelList[x].text=SelList[y].text;
+                SelList[y].value=ID;
+                SelList[y].text=Text;
+            }
+        }
+    }
+}
+
+function selGroups(grp1){
+
+    var sel = grp1;          // get the selected list
+    for(var i = 0; i < sel.options.length; i++){      // itterate each option
+    
+        sel.options[i].selected = true;
+        sel.text += sel.options[i].text+"\n";
+    }
+}
+
+</script>
+
+<form name="Settings" action="/game/change_settings" method="post" accept-charset="utf-8">
+
+<div class="w3-container ehc-blue-1">
+  <h1>Allgemeine Einstellungen</h1>
+</div>
+
+<table class="w3-table w3-border">
+
+    <tr>
+	    <td><label for="id_hide_tips" >Tips verbergen:</label></td>
+	    <td>
+            {% if hide_tips %}
+            <input class="w3-check" id="id_hide_tips" type="checkbox" checked name="hide_tips" value="True" />
+            {% else %}
+            <input class="w3-check" id="id_hide_tips" type="checkbox" name="hide_tips" value="True" />
+            {% endif %}
+		</td>
+    </tr>
+    <tr>
+        <td><label for="id_hide_tips">Heimspielcounter anzeigen:</label></td>
+	    <td>		
+            {% if sleep_counter %}
+            <input class="w3-check" id="id_sleep_counter" type="checkbox" checked name="sleep_counter" value="True" />
+            {% else %}
+            <input class="w3-check " id="id_sleep_counter" type="checkbox" name="sleep_counter" value="True" />
+            {% endif %}
+        </td>
+    </tr>	
+	
+    <tr>	
+        <td><label for="id_threema">Threema-ID:</label></td>
+		<td><input class="w3-input w3-border" id="id_threema" name="threema" value="{{ threema }}" size="8" /></td>	
+    </tr>
+	
+	<tr>
+        <td><label for="id_threema_notifier">Threema Notifier:</label></td>
+		<td>
+            {% if threema_reminder %}
+            <input class="w3-check" id="id_threema_notifier" type="checkbox"  checked disabled name="threema_reminder" value="True" />               
+            {% else %}
+            <input class="w3-check" id="id_threema_notifier" type="checkbox"  disabled name="threema_reminder" value="True" />
+            {% endif %}
+        </td>            
+    </tr> 
+
+	<tr>
+        <td><label>Lifeticker senden:</label></td>
+		<td>
+            <select name="send_ticker" class ="w3-select w3-border">
+            {% if send_ticker == 0 %}
+                <option value="0" selected>Nie</option>  
+                <option value="1">Nur bei Ausw&auml;rtsspielen</option>  
+                <option value="2">Immer</option> 
+            {% elif send_ticker == 1 %}
+                <option value="0">Nie</option>  
+                <option value="1" selected>Nur bei Ausw&auml;rtsspielen</option>  
+                <option value="2">Immer</option>    
+            {% else %}
+                <option value="0">Nie</option>  
+                <option value="1">Nur bei Ausw&auml;rtsspielen</option>  
+                <option value="2" selected >Immer</option> 
+            {% endif %}                 
+            </select>
+ 	    </td>
+	</tr>
+	
+	<tr>	
+        <td><label for="id_dkp">Dauerkartenpreis:</label></td>
+        <td><input class="w3-input w3-border" id="id_dkp" name="dkp" value="{{ dkp|formatcurrency}}" size="6"  /></td>
+	</tr>
+	<tr>	
+        <td colspan="2"><a href="{% url 'userauth_password_change' %}">Passwort &auml;ndern</a></td>
+	</tr>	
+</table>
+
+
+<div class="w3-container w3-margin-top ehc-blue-1">
+    <h1>Gruppenzuordnung</h1>
+</div>                
+
+<table class="w3-table w3-border groups">          
+    <tr>
+        <td><b>verf&uuml;gbare Gruppen</b>
+
+        {% for g in group_dic %}
+        {% if group_dic|lookup:g|lookup:'checked' == 'checked' %}
+        <p><input class="w3-check" type="checkbox" checked="checked" name='groups' value='{{g}}'><label class="w3-margin-left">{{group_dic|lookup:g|lookup:'name'}}</label>
+        {% else %}
+        <p><input class="w3-check" type="checkbox" name='groups' value='{{g}}'><label class="w3-margin-left" >{{group_dic|lookup:g|lookup:'name'}}</label>        
+        {% endif %}
+        {% endfor %}                      
+        </td>
+    </tr>
+</table>
+
+<div class="w3-container w3-margin-top">
+    <input class="w3-margin-top w3-btn ehc-blue-1 w3-margin-bottom ehc-hover-red" onClick="selGroups(document.Settings.user_groups)" type="submit" value="&Auml;nderungen speichern"/>
+</div>  
+{% csrf_token %}   
+</form>
+</div>
+
+{% if request.mobile == False %}
+<div class="w3-col w35percent"></div>
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+{% endif %}	
+
+{% endblock %}

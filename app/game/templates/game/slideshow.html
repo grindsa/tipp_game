@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}{{title}}{% endblock %}
+
+{% block content %}
+
+<div class = "w3-container w3-center">
+<div id="slideshow">
+
+	<ul class="slides ">
+    	<li><span class="score">Umfangreiche Tippstatistiken und gruppenbasierte Tipp&uuml;bersichten</span><br><img src="/static/img/sls/1.png" alt="Tippscores" /></li>
+        <li><span class="score">DEL Tabelle, Rankingstatistiken und Spielergebnisse</span><br><img src="/static/img/sls/2.png" alt="Turrimetta Beach - Dawn" /></li>
+        <li><span class="score">Schiedsrichterstatistiken</span><br><img src="/static/img/sls/3.png" alt="Power Station" /></li>
+        <li><span class="score">Erinnerungen und Toralarme per WhatsApp</span><br><img src="/static/img/sls/4.png" alt="Colors of Nature" /></li>
+		<li><span class="score">Erinnerungen und Toralarme per Threema (Premiumfeature: das kostet leider ein paar Cent pro Spiel)</span><br><img src="/static/img/sls/5.png" alt="Colors of Nature" /></li>
+		<li><span class="score">Ein Pressearchiv der Nachrichten aller Berliner Zeitungen &uuml;ber das beste Eishockeyteam der Liga</span><br><img src="/static/img/sls/6.png" alt="Pressearchiv" /></li>		
+    </ul>
+
+    <span class="arrow previous"></span>
+    <span class="arrow next"></span>
+</div>
+</div>
+
+<script src="/static/js/slideshow.js"></script>
+{% endblock %}
+

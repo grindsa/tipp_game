@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}Tippspiel|{{title}}{% endblock %}
+
+{% block extrahead  %}
+    <meta http-equiv="refresh" content="120">
+{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+<div class="w3-col w96percent">
+{% endif %}
+
+<div class="w3-container w3-padding-small ehc-blue-2 w3-section w3-center"><h1>Livespielstände und -tabelle</h1></div>
+
+{% if d_update %}
+<div class="w3-margin-bottom"><span class="w3-tag w3-green w3-round">Live:</span> {{d_update}}</div>
+{% endif %}
+
+{% if request.mobile %}
+<table id="itable" class="w3-table w3-striped w3-border w3-bordered center w3-centered w3-margin-top">
+{% else %}
+<table id="itable" class="w3-table w3-striped w3-border w3-bordered auto_width center w3-centered w3-margin-top">
+{% endif %}
+
+{% for g in del_match_list %}
+<tr>
+{% if g.status == "LIVE" %}
+<td class="left"><b>{{g.status}}</b></td>
+{% else %}
+<td class="left">{{g.status}}</td>
+{% endif %}
+
+{% if request.mobile == False %}
+<td class="right">{{g.home_team__team_name}}</td>
+{% else %}
+<td class="right">{{g.home_team__short_name}}</td>
+{% endif %}
+<td class="right"><img src="{{g.home_team__logo_url}}" alt="{{g.home_team__short_name}}" width="20"></td>
+<td>{{g.result}}</td>
+<td class="right"><img src="{{g.guest_team__logo_url}}" alt="{{g.guest_team__short_name}}" width="20"></td>
+{% if request.mobile == False %}
+<td class="left">{{g.guest_team__team_name}}</td>
+{% else %}
+<td class="left">{{g.guest_team__short_name}}</td>
+{% endif %}
+</tr>
+{% endfor %}
+</table>
+
+{% if request.mobile %}
+<table id="htable" class="w3-table w3-striped w3-border w3-bordered center w3-centered w3-margin-top w3-tiny">
+{% else %}
+<table id="htable" class="w3-table w3-striped w3-border w3-bordered center w3-centered w3-margin-top">
+{% endif %}
+<tr>
+    <th></th>
+	<th class="left" colspan="2">Team</th>
+	<th><div class="tooltip"><img src="/static/img/hockey.png" width="20" alt="SP"><span class="tooltiptext">Spiele</span></div></th>
+	<th><div class="tooltip">Pkt<span class="tooltiptext">Punkte</span></div></th>
+	<th><div class="tooltip"><i class="fa fa-lg fa-thumbs-up"></i><span class="tooltiptext">Siege</span></div></th>
+	<th><div class="tooltip"><i class="fa fa-lg fa-thumbs-down"></i><span class="tooltiptext">Niederlagen</span></div></th>
+	<th><div class="tooltip"><img src="/static/img/goal.png" width="22" alt="Tore"><span class="tooltiptext">Torverhältnis</span></div></th>
+</tr>
+
+{% for r in ranking_list %}
+<tr>
+    <td>{{r.ranking}}</td>
+    <td><img src="{{r.team__logo_url}}" alt="{{r.team__short_name}}" width="20"></td>
+    {% if request.mobile %}
+        <td class="left">{{r.team__short_name}}</td>
+    {% else %}
+        <td class="left">{{r.team__team_name}}</td>
+    {% endif %}
+    <td>{{r.match}}</td>
+    <td class="score">{{r.score}}</td>
+    <td>{{r.S}}</td>
+    <td>{{r.lost}}</td>
+    <td>{{r.goal}}:{{r.ggoal}}</td>
+</tr>
+{% endfor %}
+
+</table>
+</div>
+
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+{% endif %}
+{% endblock %}

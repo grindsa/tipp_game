@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% load dictionary_extras %}
+
+{% block title %}{{title}}{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+<div class="w3-col w96percent">
+{% endif %}
+
+<div class="w3-container w3-padding-small ehc-blue-2 w3-margin-top w3-margin-bottom w3-center"><h1>{{title}}</h1></div>
+
+{% if request.mobile %}
+<table id="itable" class="w3-table w3-striped w3-border w3-bordered center w3-centered w3-margin-top">
+{% else %}
+<table id="itable" class="w3-table w3-striped w3-border w3-bordered auto_width center w3-centered w3-margin-top">
+{% endif %}
+
+<tr>
+    <th class="left">Name</th>
+	<th>Punkte</th>
+	<th>RT</th>
+	<th>VT</th>
+</tr>
+
+{% for uid,score in score_dict %}
+<tr>
+    <td class="left">{{user_dict|lookup:uid|lookup:'username'}}</td>
+	<td>{{score}}</td>
+    <td>{{user_dict|lookup:uid|lookup:'rt'}}</td>
+    <td>{{user_dict|lookup:uid|lookup:'vt'}}</td>
+</tr>
+{% endfor %}
+</table>
+</div>
+
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+{% endif %}	
+{% endblock %}

@@ -1,0 +1,807 @@
+{% extends "base.html" %}
+
+{% block title %}{{title}}{% endblock %}
+
+{% block content %}
+{% if request.mobile == False %}
+<div class="w3-col w30percent">&nbsp;</div>
+<div class="w3-col w40percent">
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+<div class="w3-col w96percent">
+{% endif %}
+
+
+<h1>v0.50 - 08.03.2020</h1>
+<ul>
+    <li>Playoffbaum</li>
+    <li>Spielflussgrafik in den Nerdstats</li>
+    <li>Eiszeitstatistiken kommen jetzt Live</li> 
+    <li>Corona Prevention Mode <b>Danke Christian</b></li>
+    <li>Oma-Tipp Prevention</li>      
+    <li><b>Bugfix:</b> Diverse. F&uuml;r Details bitte in die git commits gucken</li>
+</ul>
+
+<h1>v0.49 - 09.02.2020</h1>
+<ul>
+    <li>CorsiF in den Nerdstats</li>
+    <li>Eiszeitstatistiken in den Nerdstats</li>
+    <li>Schusstatistiken</li>
+</ul>
+
+<h1>v0.48 - 11.01.2020</h1>
+<ul>
+    <li>Shot-Map in den Nerdstats</li>
+    <li><b>Bugfix:</b> Berechnung Shotzonen</li>
+    <li>Twitterpostings nach jedem Drittelende</li>
+    <li>Gewichtsvergleich in den Linup-WhatsApps</li>
+    <li>Gegnerische Spielaufstellung auf Wunsch von Katrin per WhatsApp</li>
+    <li>Match-Statistiken in der Drittelpause per WhatsApp</li>
+</ul>
+
+<h1>v0.47 - 31.12.2019</h1>
+<ul>
+    <li>Twitterposting mit den Spielstatistiken 10min nach Spielbeginn</li>
+    <li>Re-design Playerstats</li>
+    <li>Playerstats sind ohne Anmeldung abrufbar</li>
+    <li>Twitter-Card/OG Support für Spielstatistiken</li>
+    <li>Usability Improvements für Spielstatistiken ((Danke Katrin, Janina und Florian)</li>
+</ul>
+
+<h1>v0.46 - 20.12.2019</h1>
+<ul>
+    <li>Statistiken pro Spiel (Torsch&uuml;sse, Shot-Zones etc)</li>
+</ul>
+
+<h1>v0.45 - 30.11.2019</h1>
+<ul>
+    <li>Specialteams Statistiken</li>
+</ul>
+
+<h1>v0.44 - 24.11.2019</h1>
+<ul>
+    <li>Virtuelle DEL-Tabelle mit Filterung nach Spieltagen</li>
+    <li>Ergänzung Quick-Tipp und Match-pumpup Nachricht um Tabellenplätze der Teams</li>
+</ul>
+
+<h1>v0.43 - 17.11.2019</h1>
+<ul>
+    <li>IPv6-hero banner</li>
+    <li>DEL-Tabelle Gesamt, Heim und Auswärts</li>
+</ul>
+
+<h1>v0.42 - 20.10.2019</h1>
+<ul>
+    <li><b>Bugfix:</b> Fixes für minor Bugs (von Florian gemeldet). F&uuml;r Details bitte in die git commits gucken</li>
+</ul>
+
+<h1>v0.41 - 14.09.2019</h1>
+<ul>
+    <li><b>Bugfix:</b> Wieder ne ganze Menge. F&uuml;r Details bitte in die git commits gucken</li>
+</ul>
+
+<h1>v0.40 - 31.08.2019</h1>
+<ul>
+    <li>Migration auf Python3 und django 2.0</li>
+    <li>Performanceverbesserungen in der Artikelübersicht (data-range select)</li>
+    <li>Performanceverbesserung bei der Anzeige der Tipp-Rangliste</li>
+    <li>Tipp-Rangliste enhält jetzt eine Ver&auml;nderung zum vorheringen Spieltag</li>
+    <li>2FA für admin Frontend</li>
+    <li>Migration der Presseschau auf Wallabag 2.0</li>
+    <li>Artikelvorschau mit Bildern</li>
+    <li>Textkürzungen werden mit textwarp.shorten() durchgeführt
+    <li><b>Bugfix:</b> Ne ganze Menge. F&uuml;r Details bitte in die git commits gucken</li>
+</ul>
+
+
+<h1>v0.39.1 - 03.03.2019</h1>
+<ul>
+    <li><b>Bugfix:</b>"Jakorakel" Fix - bei geleichem Punktestand wird nach Anzahl der 'vt' und dann erst nach Name sortiert.</li>
+</ul>
+
+<h1>v0.39 - 12.01.2019</h1>
+<ul>
+    <li>Durchschnittliche Zuschauerzahl der Vorsaison hinzugefügt</li>
+</ul>
+
+<h1>v0.38.7 - 13.10.2018</h1>
+<ul>
+    <li><b>Bugfix:</b> Know your enemy statistics - verlegte Spiele (Spielstand -:-) werden nicht aufgeführt.</li>
+    <li><b>Bugfix:</b> life_ticker.py - load from twitter - wie erkenne ich ein Tor in Twitter.</li>
+    <li><b>Bugfix:</b> life_ticker.py - load from twitter Fix für Absturz wg. Tor false/postive.</li>
+    <li><b>Bugfix:</b> life_ticker.py - load from JSON - Fix um die Events sauber nach ids zu sortieren - Langsam nervt es liebe Eisbären.</li>
+    <li><b>Bugfix:</b> get_ref_dbg.py - Schiedsrichtereinteilung wird jetzt von flashscore.in gezogen </li>
+    <li><b>Bugfix:</b> get_ranking.py - Ranking wird by Spielen mit Spieltag 0 nicht mehr aktualisiert.</li>
+    <li><b>Bugfix:</b> get_ranking.py - pylint Assessment und Korrekturen.</li>
+    <li><b>Bugfix:</b> get_delgames.py - Update_date wird wieder gesetzt</li>
+</ul>
+
+<h1>v0.38.6 - 08.10.2018</h1>
+<ul>
+    <li><b>Bugfix:</b> life_ticker.py - Fix für den End-Ras Bug bei Twitter.</li>
+</ul>
+
+<h1>v0.38.5 - 05.10.2018</h1>
+<ul>
+    <li>get_delgames.py - Update der won/loss Statistik
+    <li><b>Bugfix:</b> match_pumpup.py - Die Spieltagsinfo enthält jetzt die Uhrzeit.</li>
+    <li><b>Bugfix:</b> life_ticker.py - Kleinere Verbesserungen am JSON parsing.</li>
+</ul>
+
+<h1>v0.38.4 - 03.10.2018</h1>
+<ul>
+    <li><b>Bugfix:</b> life_score.py - Anpassung an die neuen Twittergewohnheiten von Herrn Goldstein und den neuen EBB Lifeticker</li>
+    <li><b>Bugfix:</b> get_gamestats_from_del.py - Exception handling wenn keine Strafzeit angegeben wurde</li>
+    <li><b>Bugfix:</b> cron_create.py - Verbessertes Exception Handling WA-Hack-Server nicht erreichbar ist.</li>
+</ul>
+
+<h1>v0.38.3 - 28.09.2018</h1>
+<ul>
+   <li><b>Bugfix:</b> neues Script get_gamestats_from_del.py das Statistiken von der DEL Webseite holt.</li>
+   <li><b>Bugfix:</b> get_penalties_team.py auf die neue Saison angepasst</li>
+</ul>
+
+<h1>v0.38.2 - 22.09.2018</h1>
+<ul>
+   <li>cron_create.py - die Pressenschau wird an Wochentagen um 07:00 Uhr und um 19:00Uhr verschickt.
+   <li><b>Bugfix:</b> Session und CSRF cookies über settings.py abgesichert</li>
+   <li><b>Bugfix:</b> Directory-listing global abgeschalted</li>
+   <li><b>Bugfix:</b> jquery auf 3.3.1 aktualisiert</li>
+   <li><b>Bugfix:</b> match_pumpup.py - Spaltenbreite bei den Mannschaften korrigiert</li>
+   <li><b>Bugfix:</b> get_player_stats.py - eliteprospects hat Ihre Webserver-Konfig in Grössenordnungen verkackt. Script auf Python3 portiert und entprechende Weichen verbaut.</li>
+   <li><b>Bugfix:</b> cron_create.py - python3 compatibel, pylint geprüft</li>
+   <li><b>Bugfix:</b> get_del_games.py - Sportal-Link auf Saison 2018/2019 korrigiert</li>
+   <li><b>Bugfix:</b> update presseschau - RBB24 geht jetzt wieder</li>
+</ul>
+
+<h1>v0.38.1 - 07.09.2018</h1>
+<ul>
+   <li><b>Bugfix:</b>Doppelte Tippmöglichkeit aus Spielübersicht in Mobilversion korrigiert</li>
+</ul>
+
+<h1>v0.38 - 02.09.2018</h1>
+<ul>
+   <li>Man kann aus der jetzt aus der Spieleübersicht und aus "Tipps pro Spieltag" tippen</li>
+   <li><b>Bugfix:</b>Anzeige des "Live" Links bei Nicht-DEL Spielen unterdrückt.</li>
+</ul>
+
+<h1>v0.37 - 18.08.2018</h1>
+<ul>
+   <li>Datenschutzerklärung hinzugefügt (leider, leider).</li>
+   <li>match_pumpup.py - schickt Informationen zum Spiel und Gegner per WhatsApp/Threema</li>
+   <li>con_create.py - match_pumpup.py eingearbeitet</li>
+   <li>life-ticker - Anpassungen für Spiele ohne Tipp-Möglichkeit</li>
+   <li>Saison 2018/2019 eingearbeitet</li>
+   <li><b>Bugfix:</b>Korrektur der Menüanzeige in der Mobilversion bei nicht angemeldeten Benutzern.</li>
+</ul>
+
+<h1>v0.36 - 24.03.2018</h1>
+<ul>
+   <li>Krönchenanzeige für den Spitzenreiter.</li>
+   <li>konfigurierbare rote Laterne auf Wunsch von Dörthe und Roth</li>
+</ul>
+
+<h1>v0.35.4 - 01.12.2017</h1>
+<ul>
+   <li>Da sich gewisse Personen im Dynamop von dem 4:2 Hinweis "diskriminiert fühlten", wird der Hinweis nur noch angezeigt, wenn schon mal 4:2 getippt wurde...</li>
+</ul>
+
+<h1>v0.35.3 - 29.11.2017</h1>
+<ul>
+   <li>Aufgrund von "kontruktiven" Feedback über Traditionen wird ab heute in der Gruppe "dynamop" ein Hinweis zu den 4:2 Tips angezeigt. Ich hoffem, die liebe Seele hat jetzt Ihre Ruh.</li>
+</ul>
+
+<h1>v0.35.2 - 23.11.2017</h1>
+<ul>
+   <li><b>Bugfix:</b>Live - check_live_link() - Bug in der Ermittlung des "Matchtages" behoben.</li>
+</ul>
+
+<h1>v0.35.1 - 18.11.2017</h1>
+<ul>
+   <li><b>Bugfix:</b>update_presseschau.py - Tagesspiegel wieder aufgenommen.</li>
+   <li><b>Bugfix:</b>landing page - Rechtschreibfehler korrigiert (Danke Florian).</li>
+   <li><b>Bugfix:</b>Live - check_live_link() - Abfrage auf CET Zeiten angepasst.</li>
+</ul>
+
+<h1>v0.35 - 11.11.2017</h1>
+<ul>
+    <li>Erste Version einer Live-Site die die aktuellen DEL Spielstände und eine Blitztabelle anzeigt.</li>
+</ul>
+
+<h1>v0.34.2 - 29.10.2017</h1>
+<ul>
+    <li><b>Bugfix:</b>get_playerstats.py - Diverse Korrekturen (Danke Hendrik)</li>
+    <li><b>Bugfix:</b>get_ranking.py - Tabelle kommt jetzt von der DEL (Danke Katrin)</li>
+    <li><b>Bugfix:</b>Spielzeiten nach Winterzeitumstellung gefixt (Wozu ist die eigentlich gut. Macht nur Ärger.)</li>
+    <li><b>Bugfix:</b>DEL-Tabelle - Tortengrafik - Berechnung der verlorenen Spiele korrigiert (Danke Christian)</li>
+</ul>
+
+<h1>v0.34.1 - 21.10.2017</h1>
+<ul>
+    <li><b>Bugfix:</b>edit_settings - Problem bei der Gruppenzuordnung behoben</li>
+    <li><b>Bugfix:</b>change_settings - WhatsApp Versand bei Änderung der Gruppenzuordnung und "hide-Tipps" auf wa_hack_cli.py umgestellt</li>
+</ul>
+
+<h1>v0.34 - 14.10.2017</h1>
+<ul>
+    <li>Startseite - Es wird die Platzierung im Tippspiel angezeigt, damit Florian nicht immer nachzählen muss</li>
+    <li>Tippverteilung - Tipperfolg wird jetzt auch getrennt nach Heim und Auswärtsspielen angezeigt</li>
+    <li>nach Abgabe eines Tips kann man wieder zur vorherigen Seite zurückkehren</li>
+    <li><b>Bugfix:</b>get_delmatches.py - Debug Meldungen entfernt</li>
+    <li><b>Bugfix:</b>yowsup_dmn.py - wenn eine Nachricht nicht verarbeitet werden kann, wird das Programm nicht abgebrochen (sys.exit(0) auskommentiert)</li>
+</ul>
+
+<h1>v0.33 - 07.10.2017</h1>
+<ul>
+    <li>get_life_ranking.py: erste Version einer Blitztabelle</li>
+    <li><b>Bugfix:</b>get_ranking() - Nicht DEL teams werden nicht bei der Funktion "lookup_team()" bereücksichtigt</li>
+</ul>
+
+<h1>v0.32.1 - 03.10.2017</h1>
+<ul>
+    <li><b>Bugfix:</b>get_score() - Typo behoben "p_7vs2 vs p_7v2". (Danke Christian)</li>
+    <li><b>Bugfix:</b>get_tipdistribution() - Exception-Handling wenn kein Spielstand eingetragen ist (kann kurz nach Spielbeginn auftreten).</li>
+</ul>
+
+<h1>v0.32 - 30.09.2017</h1>
+<ul>
+    <li><b>Bugfix:</b>Torstatistik: tickInterval auf der Y-Achse auf 2 gesetzt</li>
+    <li>erste Version der Strafzeitenstatistik</li>
+    <li>erste Version der Zuschauerstatistik</li>
+    <li>Mannschaftsaufstellung aus dem Ticker entfernt</li>
+</ul>
+
+<h1>v0.31 - 24.09.2017</h1>
+<ul>
+    <li>get_team_setup.py trägt die Schiedsrichter ein, sofern ein aktuelles json File vorliegt</li>
+    <li>get_team_setup.py nimmt die Daten aus dem EHC json File als zweite Datenquelle (#hauptstadthockey ist ja leider nicht immer im Stadion). </li>
+    <li><b>Bugfix:</b> kye - Lineup Erstellung auskommentiert. (Danke Christian)</li>
+</ul>
+
+<h1>v0.30.1 - 23.09.2017</h1>
+<ul>
+    <li>Know your enemy: Spielanzeige auf 8 begrenzt (oder waren es 9?)</li>
+    <li>get_team_setup.py: Marcus und Josi können sich keine Zahlen merken. Also enthält die Teamaufstellung jetzt die Spielernamen</li>
+    <li><b>Bugfix:</b> get_ref_dbg.py - Fehler bei der Schiedsrichterermittlung behoben (int() und str() sind schon schwer auseinanderzuhalten...)</li>
+    <li><b>Bugfix:</b> updaste_presseschau.py - CA-cert path in check_url wird jetzt direkt angegeben.</li>
+    <li><b>Bugfix:</b> dcesb - Schwellwert korrigiert.</li>
+</ul>
+
+<h1>v0.30 - 21.09.2017</h1>
+<ul>
+    <li>Erster Entwurf der Torstatistik</li>
+    <li>neues Script zur Ermittler der Aufstellung pro Spiel</li>
+</ul>
+
+<h1>v0.29.2 - 16.09.2017</h1>
+<ul>
+    <li><b>Bugfix:</b> life_score.py - verschickt jetzt wieder die Punktevergabe nach Spielende</li>
+    <li><b>Bugfix:</b> mytips - Spiele mit Matchday 0 werden in der Grafik ignoriert</li>
+    <li><b>Bugfix:</b> yowsup_dmn.py - lookup_user_by_mobilenumber() Exception handling für User ohne Telefonnummer</li>
+    <li>life_score.py - pollt beim ersten Durchlauf die Namen der Schiedsrichter aus dem json File der Eisbären</li>
+</ul>
+
+<h1>v0.29.1 - 09.09.2017</h1>
+<ul>
+    <li><b>Bugfix:</b> life_score.py - kleinere Verbesserungen um die "Twitterschwankungen" des Herrn Goldstein auszugleichen</li>
+    <li><b>Bugfix:</b> update_presseschau.py - eisbaerlin.de - LE Zertifikat wird nicht geprüft da falsch konfiguriert</li>
+    <li><b>Bugfix:</b> update_presseschau.py - RBB - erster Artikel in section-area wird jetzt auch erkannt.</li>
+    <li><b>Bugfix:</b> load_video_streams.py - Anpassung des Links für neue Saison</li>
+    <li><b>Bugfix:</b> ticker.html - CSS-Fehler behoben</li>
+    <li><b>Bugfix:</b> matches.html/Refdet - Rechtschreibfehler korrigiert, CSS-Fehler behoben</li>
+    <li><b>Bugfix:</b> Schiedsrichterstatistik - Spiele mit Matchday "0" (Vorrunde) werden nicht mehr berücksichtigt</li>
+    <li><b>Bugfix:</b> Besuchstatistik - Spiele mit Matchday "0" (Vorrunde) werden nicht mehr berücksichtigt</li>
+    <li><b>Bugfix:</b> get_playerstats.py - Anpassung des Links für neue Saison</li>
+    <li><b>Bugfix:</b> get_del_games.py - Anpassung des Links für neue Saison</li>
+    <li><b>Bugfix:</b> get_penalties.py - Anpassung des Links für neue Saison</li>
+    <li><b>Bugfix:</b> get_ranking.py - Anpassung des Links für neue Saison</li>
+</ul>
+
+<h1>v0.29 - 02.09.2017</h1>
+<ul>
+	<li>life_score.py: neue Version, die das JSON File des Eisbärentickers als zusätzlichen Datafeed benutzt</li>
+    <li>no_tip Matches (wird für den Lifeticker der Sommertuniere benötigt)</li>
+    <li>Teams können jetzt nach DEL-Teilnahme gefiltert wiedern (wird für die Sommertuniere und das AHL Spiel benötigt)</li>
+    <li><b>Bugfix:</b> Teamstatistiken werden jetzt pro Saison angezeigt</li>
+</ul>
+
+<h1>v0.28 - 12.08.2017</h1>
+<ul>
+    <li>Neues Layout basierend auf w3.css und font-awesome icons</li>
+    <li>Neue WhatsApp Anbindung via Wa_hack_dmn.py (yowsup sucks)</li>
+</ul>
+
+<h1>v0.27 - 25.02.2017</h1>
+<ul>
+    <li>DK-Preis pro Spiel in die DCESB Statistik aufgenommen</li>
+    <li><b>Bugfix:</b>:get_last_match() erkennt jetzt "out-of-cycle" Spiele richtig - <b>Danke Christian</b></li>
+</ul>
+
+<h1>v0.27 - 18.02.2017</h1>
+<ul>
+    <li>Teamstatistiken eingeführt</li>
+    <li><b>Bugfix:</b>: get_player_stats.py korrigiert da Layoutänderung von Telekom-Eishockey</li>
+    <li><b>Bugfix:</b>: get_player_stats.py - EP ist zu langsam "injured" Flag wird manuell gesetzt</li>
+</ul>
+
+<h1>v0.26.1 - 02.02.2017</h1>
+<ul>
+    <li>Vertragsdauer der Spieler wird in den Spielerstatistiken angezeigt</li>
+    <li>get_player_stats.py - Vertragsdauer von EP wird mit gespeichert</li>
+    <li><b>Bugfix:</b>:cron_create.py get_last_match() korrigiert</li>
+    <li><b>Bugfix:</b>:+/- Statistik wird ohne Nachkommastelle ausgegeben - <b>Danke Christian</b></li>
+</ul>
+
+<h1>v0.26 - 01.02.2017</h1>
+<ul>
+    <li>Spieler- und  Towwartstatistiken von Telekom Eishockey und Eliteprospekts hinzugefügt</li>
+    <li>get_player_stats.py - Python Script um die o.g. Statistiken in die Datenbank einzupflegen</li>
+    <li>josi-bot.py - aktuelle Tabellenplatzierung wird hinzugefügt</li>
+</ul>
+
+<h1>v0.25 - 30.12.2016</h1>
+<ul>
+    <li>die Teamaufstellung wird (sofern vorhanden>, bei den Spielstatistiken und im Ticker angezeigt</li>
+</ul>
+
+<h1>v0.24.5 - 29.12.2016</h1>
+<ul>
+   <li>josi-bot.py schickt eine Nachricht an Josi und teilt mit gegen wen wir spielen und was sie getippt hat.</li>
+   <li><b>Bugfix:</b>:get_del_games.py aktualisert nicht mehr die Spieltabelle</li>
+</ul>
+<h1>v0.24.4 - 27.11.2016</h1>
+<ul>
+   <li><b>Bugfix:</b>:matchlisten werden jetzt nach Datum und nicht mehr nach Spieltag sortiert (get_matches(), get_next_match(), get_next_homematch() get_last_match())</li>
+   <li><b>Bugfix:</b>:Quicktipp - das n&auml;chste Match wird jetzt nach Datum und nicht mehr nach Spieltag ausgew&auml;hlt.</li>
+</ul>
+<h1>v0.24.3 - 22.10.2016</h1>
+<ul>
+   <li>life_sportal.py: Delaytimer auf 1s reduziert</li>
+   <li>life_score.py: Delaytimer auf 2s reduziert</li>
+   <li>life_score.py: yao wurde um "alle sind raus..." und "alle sind raus bis auf..." Meldungen erg&auml;nzt</li>
+   <li>libyowsup.py: der Bot benutzt den "typing" state bevor er eine Nachricht sended</li>
+   <li><b>Bugfix:</b>:fix für <a href="https://github.com/tgalal/yowsup/pull/1045">https://github.com/tgalal/yowsup/pull/1045</a> eingearbeitet</li>
+   <li><b>Bugfix:</b>:life_score.py - die Nachricht bei Spielende wird jetzt verschickt.</li>
+
+</ul>
+<h1>v0.24.2 - 15.10.2016</h1>
+<ul>
+   <li>josi-bot.py tippt jetzt nicht mehr auf einen Sieg von Krefeld</li>
+   <li>EBB Karma ist nicht mehr nur auf die Saison bezogen sondern ewig :-)</li>
+   <li><b>Bugfix:</b>:load_videostreams.py - Typo in der Variable in Zeile 64 korrigiert</li>
+   <li><b>Bugfix:</b>:yowsup - yowsup/layers/axolotl/store/sqlite/litesenderkeystore.py exception handling in line 34 angepasst</li>
+   <li><b>Bugfix:</b>:update_presseschau.py - Liveblog für vom Tagessspiegel wird für das Erste ignoriert. Oh mein Gott, wie kann man so fehlerhaftes HTML schreiben!</li>
+</ul>
+<h1>v0.24.1 - 03.10.2016</h1>
+<ul>
+   <li>Strafzeiten kommen von der eishockey.info Fairplay Statistik</li>
+   <li><b>Bugfix:</b>: libyouwsup.py - Korrektur des "onReceipt" Handlers im ReceiveLayer</li>
+   <li><b>Bugfix:</b>: libyouwsup.py - Implementierung eines hold-down timers um ältere Location Nachrichten zu ignorieren. (Danke Dani, Katrin, Janina, Frank)</li>
+</ul>
+
+<h1>v0.24 - 01.10.2016</h1>
+<ul>
+   <li><b>Bugfix:</b>: Sortierung bei Gleicher Punktzahl erfolgt nun alphabetisch</li>
+   <li><b>Bugfix:</b>: libyouwsup.py - disconnect event in SendLayer ergänzt</li>
+   <li>Schiriinformationen kommen jetzt vom DEB</li>
+   <li>DEL-Tabelle kommt jetzt von Hockeyweb</li>
+   <li>Spielergebnisse kommen von Sportal</li>
+   <li>Strafzeiten komen von eishockey.info</li>
+   <li>life-score.py basiert nur noch auf Twitter</li>
+   <li>Testbetrieb Sportal-Ticker</li>
+</ul>
+
+<h1>v0.23 - 10.08.2016</h1>
+<ul>
+   <li>Spiele der Saison 2016 eingepflegt</li>
+   <li><b>Bugfix:</b>: DEL Tabelle warf Fehler, wenn keine Spieldaten der Saison vorhanden waren</li>
+   <li><b>Bugfix:</b>: Chart über der DEL Tabelle berücksichtigt jetzt die Saison</li>
+   <li><b>Bugfix:</b>: Season wird jetzt bei Erstellungen der Grafik über der Spiele-Tabelle berücksichtigt</li>
+   <li><b>Bugfix:</b>: tipptools: get_ranking.py trägt jetzt eine season_id ein</li>
+   <li><b>Bugfix:</b>: Division by Zero - Fehler (wenn keine Spiele vorliegen) behoben</li>
+   <li><b>Bugfix:</b>: Season wird jetzt bei der Erstellung diverser Statistiken berücksichtigt</li>
+   <li><b>Bugfix:</b>: Tipps per Day berücksicht jetzt auch einen Season ohne Spiele (vor Saisonbeginn)</li>
+   <li><b>Bugfix:</b>: tipptools: update_presseschau.py ignoriert die URL des Tagesspiegel Blogs</li>
+   <li><b>Bugfix:</b>: tipptools: ts_ehc_grep.py neuer Link mit neuer Headline</li>
+   <li><b>Bugfix:</b>: tipptools: word_count.py Umlautproblem gefixt</li>
+   <li><b>Bugfix:</b>: kye - Fehlermeldung wenn keine Teamstatistiken für ein Team vorliegen behoben (danke liebe DEL).</li>
+   <li><b>Bugfix:</b>: tipptools: random sleep timer für diverse Scripte um die Whatsapp-KI zu verwirren </li>
+</ul>
+
+<h1>v0.22.1 - 06.03.2016</h1>
+<ul>
+    <li><b>Bugfix:</b> get_next_match(), get_sleep_counter() korrigiert, wenn es kein nächstes Spiel mehr gibt.</li>
+</ul>
+<h1>v0.22 - 26.02.2016</h1>
+<ul>
+    <li>tipptools: life_score.py: neue Version mit threading support die gleichzeites Senden und Empfangen erlaubt.</li>
+	<li><b>Bugfix:</b> in den Trainingsstatistiken wurde ein Fehler angezeigt, wenn keine aktuellen Trainingszeiten vorhanden waren.</li>
+	<li> angepasstes CSS-File mit Begrenzung der Anzeigebreite</li>
+    <li><b>Bugfix:</b> Im Men&uuml; wurde "Statisticen" in "Statistiken" korrigiert.</li>
+    <li><b>Bugfix:</b> get_ranking.py: Script kann jetzt die komischen Playofficons der DEL Seite ignorieren.</li>
+</ul>
+
+<h1>v0.21 - 06.02.2016</h1>
+<ul>
+    <li>in der Statistik "Strafzeiten pro Schiedrichter" werden jetzt eigene und fremde Strafzeiten angzeigt</li>
+    <li>Anzeige der <a href="/game/evernt">Trainingszeiten</a> des EHC (neues Script: get_training_times.py)</li>
+	<li><b>Bugfix:</b> tipptools: life_score.py - Problem bei Torschützenanzeige für Threema-User behoben.</li>
+    <li><b>Bugfix:</b> tipptools: diverse - Problem bei der Prüfung von django settings Parametern behoben.</li>
+</ul>
+
+<h1>v0.20 - 03.02.2016</h1>
+<ul>
+    <li><a href="/game/frf">Featurerequest-Formular</a> eingef&uuml;hrt.</li>
+    <li>Tagesspiegel Blog in Presseschau eingearbeitet. (neues Script: ts_ehc_grep.py)</li>
+    <li>Top-Twitterbegriffe werden jetzt als Wordcloud angezeigt.</li>
+    <li>Presseschau kann jetzt als <a href="/article/rss/">rss</a> exportiert werden</li>
+    <li>verbleibende Threema_credits werden in den Nachrichten angezeugt</li>
+    <li>tipptools: life_score.py: in der Endstandsnachricht werden die vergebenen Punkte angzeigt</li>
+	<li>in der &Uuml;bersicht: Tipps pro Spiel wird 6 Stunden nach Spielbeginn noch das alte Spiel angezeigt</li>
+	<li><b>Bugfix:</b> Longrunner - Fehler bei process_tipp nach Gruppenwechsel behoben.</li>
+</ul>
+<h1>v0.19.1 - 09.01.2016</h1>
+<ul>
+    <li>die Karma Statistik wird jetzt nach Prozent sortiert</li>
+    <li>DCESB: Es wird jetzt die Anzahl der bisher absolvierten Heimspiele in der Saison angezeigt</li>
+	<li><b>Bugfix</b> life_score.py - b_threshold Variable hatte noch den Debug Wert.</li>
+</ul>
+
+<h1>v0.19 - 02.01.2016</h1>
+<ul>
+    <li>neue &Uuml;bersicht zur Anzeige der verbleibenden Threema-Credits /trgw/credits</li>
+    <li>ein paar einfache Statistiken der Presseschau unter /article/statistics - there is more to come...</li>
+    <li>tipptools: life_score.py - die Nachrichten zur "Drittelbeginn" werden jetzt bereichnet (20 min nach Drittelende)</li>
+	<li><b>Bugfix</b> trgw - Fehler beim Parsen der Locationdate von Threema behoben.</li>
+</ul>
+
+<h1>v0.18 - 28.12.2015</h1>
+<ul>
+    <li>Der Stand des Threemakontos kann jetzt über den Bot abgefragt werden. Stichworte: trcredit, threema-credit</li>
+    <li>der Dynamo-Bot antwortet jetzt auch via Threema</li>
+    <li>"Presence"-Updates werden jetzt auch über Threema entgegengenommen</li>
+    <li>Neues Version von "life_score.py" mit Twitterintegration - Die DEL Webseite ist einfach zu langsam.</li>
+    <li>"Strafminuten" per Schiedsrichter &Uuml;bersicht erweitert</li>
+    <li><b>Bugfix</b> DCESB &Uuml;bersicht: Sortierung nach Heimspielbesuchen</li>
+    <li><b>Bugfix</b> myfunctions.py "threema_pk" issue in &get_single_usersettings" behoben</li>
+</ul>
+
+<h1>v0.17 - 21.12.2015</h1>
+<ul>
+    <li>Neue &Uuml;bersicht "Strafminuten" per Schiedsrichter</li>
+    <li><b>Bugfix</b> myfunctions.py Ausnahmebehandlung in "get_refstats()" bei einem fehlerhaft formatierten Ergebnis verbessert
+    <li><b>Bugfix</b> myfunctions.py "threema_pk" issue in &get_single_usersettings" behoben</li>
+</ul>
+<h1>v0.16.1 - 06.12.2015</h1>
+<ul>
+    <li>settings.py - TR.PASSWORD wieder reingenommen, es gab nur Probleme, da das life_score.py Skript abbrach (tbfinr)</li>
+    <li><b>Bugfix</b> life_score.py - zus&auml;tzliche elif Abfragen in check_report_period() zur besseren Erkennung der Drittelpausen</li>
+    <li><b>Bugfix</b> life_score.py - Nach Unixformat konvertiert</li>
+</ul>
+<h1>v0.16 - 06.12.2015</h1>
+<ul>
+    <li>settings.py - TR.PASSWORD rausgenommen, da keine Credits mehr &uuml;brig waren</li>
+    <li>life_score.py - Script wurde auf Wunsch eines einzelnen Herren komplett neugeschrieben - es wird jetzt die Detailseite des Spiels ausgewertet.</li>
+    <li>yowsup_dmn.py - Der Youwsup-Daemon reagiert jetzt auf die Worte: "Tipp-Tabelle?" oder "Tipptabelle?" und zeigt die Platzierungen der jeweiligen Gruppe an.</li>
+</ul>
+
+<h1>v0.15 - 28.11.2015</h1>
+<ul>
+    <li><a href="https://de.wikipedia.org/wiki/HTTP_Strict_Transport_Security">HSTS</a> eingeschaltet</li>
+    <li><b>Bugfix</b> DEL-Tabelle - Problem bei der Anzeige der meisten/wenigsten Strafminuten behoben</li>
+    <li><b>Bugfix</b> life_score.py - Workaround f&uuml;r ein Problem auf der DEL Webseite bei der Anzeige der Restzeit</li>
+    <li>yowsup_dmn.py - Der Youwsup-Daemon reagiert jetzt auf die Worte: "Tipp-Tabelle" oder "Tipptabelle" und zeigt die Platzierungen der jeweiligen Gruppe an.</li>
+    <li>Die EBB Karma wird in Prozent angezeigt (gewonnene Spiele vs. besuchte Spielle</li>
+</ul>
+<h1>v0.14.1 - 27.11.2015</h1>
+<ul>
+    <li><b>Bugfix</b> life_score.py - Ausnahmebehandlung bei der Ermittlung des Spielernamens eingebaut.</li>
+    <li><b>Bugfix</b> cron_create.py - Croneintrag für die Anzeige der Threemacredits korrigiert (l&auml;uft nur noch einmal t&auml;glich).</li>
+    <li><b>Bugfix</b> tipp_reminder.py - URL in den Erinnermichs korrigiert. <b>Danke Hanna</b></li>
+</ul>
+<h1>v0.14 - 22.11.2015</h1>
+<ul>
+    <li>CSS: Twitter-Trend Grafik hat jetzt einen Rahmen.</li>
+    <li>Tipp-tools: life_score.py informiert bei Toren über den Schützen.</li>
+    <li>Tipp-tools: life_score.py informiert jetzt auch &uuml;ber Drittelbeginn und -pausen.</li>
+    <li><b>Bugfix</b> cron_create.py - Tippfehler eim Aufruf des Backup-Skriptes korrigiert.</li>
+</ul>
+<h1>v0.13.2 - 14.11.2015</h1>
+<ul>
+   <li>unter "Tipps pro Spieltag" wird ab jetzt der Zeitpunkt, an dem der Tipp abgegeben wurde, angezeigt...</li>
+   <li>Tipp-tools: yowsup_dmn.py: Reizworterkennung &uuml;berarbeitet. Der Bot war zu gespr&auml;chig.</li>
+   <li>Tipp-tools: cron_create.py erstellt jetzt einen Eintrag f&uuml;r das Backup-Skript</li>
+   <li>Tipp-tools: tipp_backup.sh neue Version des Backupscripts (nun mit Zertifikaten und Webserver-Konfiguration)</li>
+   <li>Tipp-tools: word_counter.py hat jetzt ein Debug-Flag, mit dem die Datenbankeintr&auml;ge ausgegeben werden</li>
+   <li>Links in der Tag-Cloud wieder aktiviert - der Fix gef&auml;llt mir nicht aber egal...</li>
+</ul>
+<h1>v0.13.1 - 12.11.2015</h1>
+<ul>
+   <li>Links in der Tag-Cloud entfernt, da icontain in Mysql nicht funktioniert (keine Ahnung warum)</li>
+   <li><b>Bugfix</b> cron_create.py: type on word_count.py entfernt</li>
+</ul>
+<h1>v0.13 - 11.11.2015</h1>
+<ul>
+    <li>Dank <a href="https://letsencrypt.org/">Lets Encrypt</a> kann das Tippspiel endlich HTTPS</li>
+    <li>Tipp-tools: word_counter.py analysiert die Zeitungsartikel (alle 4 Stunden) und erstellt eine Liste der 25 Top-Schlagworte, aus denen die Tag-Cloud gebildet wird</li>
+    <li><b>little data:</b> Erster Versuch einer Tag-Cloud für die Presseartikel</li>
+    <li>Neue Grafik in der Spiele&uuml;bersicht, die Tore, Gegentore und Tabellenplatz pro Spieltag anzeigt.</li>
+    <li><b>little data:</b> erster Versuch eines Twittertrend-Chart</li>
+</ul>
+<h1>v0.13 - 01.11.2015</h1>
+<ul>
+	 <li>Das Tippformular enth&auml;t jetzt die Schiedsrichterstatistik.</li>
+	 <li>Die "know your enemies" Statistik enh&auml;lt jetzt die  Ergebnisse der letzten 5 Spiele.</li>
+	 <li>DEL Tabelle wurde neu sortiert, "Punkte"-Spalte wird jetzt hervorgehoben und fett markiert</li>
+	 <li>Grafik &uuml;ber der DEL Tabelle wurde leicht ge&auml;ndert</li>
+</ul>
+<h1>v0.12 - 30.10.2015</h1>
+<ul>
+     <li>Die "know your enemies" Statistik enh&auml;lt jetzt eine Ergebnisse der letzten 5 Spiele des Gegners</li>
+	 <li>get_ranking_per_season(): Die Anzahl der Datenbankzugriffe zur Erstellung der Tipp-Grafik wurde "optimiert"</li>
+     <li>&Auml;nderung am Datenbankschema (v.0019_delmatch)
+	 <ul>
+	    <li>neues Tabell "delmatch" f&uuml;r die Spielst&auml;nde</li>
+     </ul>
+</ul>
+<h1>v0.11.1 - 29.10.2015</h1>
+<ul>
+     <li><b>Bugfix</b> DCESB - Rundungsfehler beiseitigt - oh wie peinlich - .</li>
+     <li><b>Bugfix</b> Fehlerhafte Parameter&uuml;bergabe bei den Anti-EBB Tips (bad_tip()) korrigiert. <b>Danke Katrin</b></li>
+</ul>
+<h1>v0.11 - 29.10.2015</h1>
+<ul>
+     <li>libyowsup.py: Nach dem Start von yowsupd werden all Nachrichten, die &auml;lter als 4h sind, ignoriert</li>
+	 <li>Auf "Meine Tipps" wird die Punktevergabe und die Plazierung in einer Grafik angezeigt</li>
+     <li>Statistik der Begnungen der Eisb&auml;ren mit einem anderen DEL Team. Diese Statistiken k&ouml;nnen über das Tipp-Formular und die Spieleliste aufgerufen werden.</li>
+     <li>Im Tipp-Formular wird ein Link auf die Spielhistorie der beiden Teams gegeneinander angezeigt.</li>
+     <li>Im Tipp-Formular werden jetzt die Schiedsrichter (sofern vorhanden) angezeigt.</li>
+     <li>get_score.py tr&auml;gt jetzt auch die Schiedsrichter f&uuml;r zuk&uuml;nftige Spiele in die Datenbank ein.</li>
+     <li>Verlorene Spiele werden in der Spieleübesicht rot markiert</li>
+     <li><b>Bugfix</b> Redirect der Rankingseite korrigiert.</li>
+</ul>
+
+<h1>v0.11 - 25.10.2015</h1>
+<ul>
+     <li>Tipp-tools: life_score.py: bei Restzeit "3. Drittel Restzeit 0:00 wird das Spiel as "zu Ende" gewertet.</li>
+	 <li>in der Tipptabelle wird ein auf <a href="http://www.highcharts.com">"highcharts"</a> basierendes Diagramm angezeigt.
+</ul>
+
+<h1>v0.10 - 20.10.2015</h1>
+<ul>
+     <li>Schummelschutz. Mittels <b>"Schummel &lt;Name&gt;"</b> k&ouml;nnen Schummelversuche per WhatsApp protokolliert werden.</li>
+	 <li>Tipp-tools: Erste Version von load_video_streams.py. Dieses Skript hinterlegt Links auf die "DEL Spiele Highlights" in der Datenbank</li>
+     <li>&Auml;nderung am Datenbankschema	(v.0030_auto_20151023_0847)
+	 <ul>
+	    <li>neues Feld "viedeo_url" in matches (wird von load_video_streams.py gef&uuml;llt)</li>
+	    <li>neues Feld "cheat" in presence um Schummelversuche zu protokollieren</li>
+	    <li>neues Feld "cheat_detector" in usersettings</li>
+     </ul>
+     </li>
+     <li>In der Artkel&uuml;bersicht der Presseschau wird jetzt auch das Artikeldatum angezeigt.</li>
+     <li>In der Liste der Spiele wird jetzt ein Videolink auf die Spielzusammenfassung angezeigt.</li>
+	 <li>Tipp-tools: yowsupd reagiert auf <b>"Restzeit"</b> und gibt die verbleibende Spielzeit aus</li>
+     <li><b>Bugfix</b> Ranking während eines Spiels wird jetzt angezeigt.</li>
+     <li><b>Bugfix</b> Artikeldetails werden jetzt wieder angzeigt (Fehler im Bannerparsing). <b>Danke Christian</b></li>
+</ul>
+
+<h1>v0.9.1 - 18.10.2015</h1>
+<ul>
+     <li>Sleep-Counter wird jetzt auch bei 0 Tagen (mit rotem Banner) angezeigt.</li>
+     <li>Zwei neue Statisiken (Karma und DCESB)</li>
+	 <li>Tipp-tools: yowsupd kann jetzt auch Geodaten empfangen abgleichen und din die Datenbank eintragen (wird für Karma und die Wahl vom "Dynamop Certified Eisb&auml;renspielbesucher (DCESB)" ben&ouml;tigt)</li>
+     <li><b>Bugfix</b>: Es kommt ein Fehler 500 mehr, wenn ein nicht vorhandener Artikel angezeigt wird. <b>Danke Christian</b></li>
+     <li><b>Bugfix</b>: Tippgame-Tools: cron_create.py - yowsupd wird jetzt 3 Stunden vor Spielbeginn gestartet.</li>
+     <li><b>Bugfix</b>: Tippgame-Tools: yowsupd reagiert nicht mehr auf "Stand" sondern auf "ischenstand".</li>
+     <li>Spielplan: in der Mobilansicht wird jetzt neben dem Datum die Startzeit angezeigt.</li>
+     <li><b>Bugfix</b> xls_to_response(): Es werden nun die richten Werte angezeigt und nicht die aus der Vorsaison.</li>
+     <li><b>Bugfix</b> Noch ein Fix für "Quicktipp eines Users in der "Default"-Gruppe" Problem.</li>
+</ul>
+
+<h1>v0.9 - 09.10.2015</h1>
+<ul>
+     <li>In der Presseschau werden nur noch die Nachrichten des aktuellen Monats angezeigt. Dazu gibt es die M&ouml;glichkeit, zwischen den einzelnen Monaten zu wechseln.</li>
+     <li>twitter Nachrichten werden jetzt gefiltert (es werden nur noch die Tweets der letzten beiden Wochen angezeigt)</li>
+     <li>Der Endstand wird jetzt an alle Gruppen (WhatsApp) und Benutzer (Threema) geschickt, die das "Toralarm" Flag gesetzt haben</li>
+     <li>Toralarm kommt jetzt mit Smiley.</li>
+     <li>&Auml;nderung am Datenbankschema	(v.0027_auto_20150810_1840)
+	 <ul>
+	    <li>neues Feld "done" in matches (wird von life_score.py gesetzt, wenn das Spiel zu Ende ist)</li>
+     </ul>
+     <li><b>Bugfix</b>: ptip() Quicktipp wird nicht mehr abgebrochen, wenn der User zur Group "Default" geh&ouml;hrt. <b>Danke D&ouml;rte und DerRoth</b></li>
+     <li><b>Bugfix</b>: life_score.py: Wenn das letzte Match älter als 12 Stunden alt ist, wurde das Script zu fr&uuml;h gestartet und wird jetzt abgebrochen.</li>
+     <li><b>Bugfix</b>: life_score.py: Es gibt keine Toralarm mehr f&uuml;r den Spielstand "0:0" <b>Danke Katrin</b></li>
+     <li><b>Bugfix</b>: myfunctions.py: get_next_match() - Defaultwerter für "tv" und "date" Variablen deklariert. <b>Danke D&ouml;rte</b></li>
+</ul>
+
+<h1>v0.8 - 01.10.2015</h1>
+<ul>
+     <li>Spiele&uuml;bersicht: beim Aufruf der Spieleliste wird zum n&auml;chsten Spiel gesprungen</li>
+     <li>neuer Men&uuml;punkt "DEL-Tabelle"</li>
+     <li>Tippgame-Tools: Erste Version des get_ranking Scripts, dass die DEL Tabelle nach Spielende in die Datenbank eintr&auml;gt</li>
+     <li>Toralarm per WhatsApp oder Threema, der &uuml;ber einen Parameter auf Gruppenebene gesteuert werden kann.</li>
+     <li>&Auml;nderung am Datenbankschema	(v.0027_auto_20150928_1840)
+	 <ul>
+	    <li>neues Feld "alert" in Groupsettings für den Toralarm</li>
+	    <li>neues Tabelle Ranking, in der die DEL Tabelle + Statistiken pro Spieltag gespeichert werden</li>
+	 </ul>
+     <li><b>Bugfix</b>: libyowsup.py: YowsupSendStack/YowsupReceiveStack benutzen jetzt stackbuilder()</li>
+     <li><b>Bugfix</b>: libyowsup.py: Fehlerbehandlung bei unbekannten Nachrichtentypen behoben.</li>
+     <li><b>Bugfix</b>: life_score.py: Funktion zum Vergleich des Spielstandes mit den Tipps korrigiert.</li>
+     <li>Es wird ein Hinweis auf der Einstiegsseite und der "Tipps pro Spieltag" Seite angezeigt, wenn das nächste Spiel im TV übertragen wird</li>
+</ul>
+
+<h1>v0.7 - 27.09.2015</h1>
+<ul>
+    <li>Tippgame-Tools: Erste Version des life_score Scripts, das denk aktuellen Spielst&auml;nd im 2 Minutentakt &uuml;berpr&uml;ft und die Datenbank aktulisiert</li>
+	<li>Es k&ouml;nnen WhatsApp/Threema Nachrichten verschickt wenn, einer Tipper "raus" ist. Die Aktivierung des Features erfolgt &uuml;ber die Tabelle "groupsettings"</li>
+	<li><b>Experimental:</b> erste Version des Tippgamebots (wird w&auml;hrend des Spiels gestartet) der auf die folgenden Kommandos reagiert.
+	<ul>
+	    <li><b>Echo:</b> Antwort: "ich reagiere auf Echo"</li>
+		<li><b>Wie steht es?:</b> Es wird mit dem aktuellen Spielstand geantwortet</li>
+		<li><b>Spielstand:</b> Es wird mit dem aktuellen Spielstand geantwortet</li>
+		<li><b>Wer ist raus?:</b> Es werden die Namen der Tipper, die bereits aus dem Spiel sind, angezeigt</li>
+    </ul>
+    <li>&Auml;nderung am Datenbankschema	(v.0022_auto_20150927_0345
+	<ul>
+	<li>neues Feld yao_message in Groupsettings für die "user is out" WhatsApp-Nachricht</li>
+	</ul>
+	</li>
+    <li>der Heimspielcounter ziegt jetzt den Gegner an</li>
+    <li><b>Bugfix</b>: settings.py: http://tippspiel.dynamop.de ist jetzt prim&auml;re URL in ALLOWED_HOSTS.</li>
+    <li><b>Bugfix</b>: settings.py: threema credentials hinzugef&uuml;gt. WIE PEINLICH!ElfElf</li>
+    <li><b>Bugfix</b>: Tippgame-Tools: tipp_reminder.py - URL für Threema-Erinnerung hinzugef&uuml;gt.</li>
+</ul>
+<h1>v0.6.2 - 25.09.2015</h1>
+<ul>
+    <li>konfigurierbarer Heimspielcounter eingef&uuml;hrt.</li>
+    <li>In der Artikelanzeige wird jetzt als Quelle nicht mehr die komplette URL sondern nur die Domain angezeigt. Ein Klick auf den Link f&uuml;hrt aber zum Artikel.</li>
+	<li><b>Bugfix</b>: "base.html" HTML Syntaxfehler behoben.</li>
+    <li><b>Bugfix</b>: "Treema Notifier" Checkbox wird in den Profileinstellungen jetzt richtig eingezeigt. <b>Danke Christian</b></li>
+    <li><b>Bugfix</b>: Diverse kleinere Rechtschreibfehler korrigiert. <b>Danke Christian</b></li>
+    <li><b>Bugfix</b>: Tippgame-Tools: cron_create.py - Zeitpunkt f&uuml;r die Tippzusammenfassung um 60 Sekunden erh&ouml;ht.</li>
+    <li><b>Bugfix</b>: Tippgame-Tools: twitt-fetch.py - Es werden jetzt auch https Links in html konvertiert.</li>
+</ul>
+<h1>v0.6.1 - 19.09.2015</h1>
+<ul>
+    <li>&Auml;nderung am Datenbankschema (v.0020_auto_20150918_1510)
+	   <ul>
+	    <li>Tabelle "twitter" - Feld t_id zu "BigInteger" ge&auml;ndert</li>
+	    <li>Tabelle "twitter" - Feld id zu "AutoField" ge&auml;ndert</li>
+	   </ul>
+	</li>
+    <li><b>Bugfix</b>: Auf Mobilger&auml;ten wird der Benutzername in der Navigationsleiste nicht mehr angezeigt.</li>
+    <li><b>Bugfix</b>: &Auml;nderungen am CSS-Stylesheet um die Navigationsleiste auf kleinen Bildschirmen besser darzustellen </li>
+    <li><b>Bugfix</b>: Tippgame-Tools: cron_create.py - fehlerhaften Cron-Eintrag f&uuml;r twitt-fetch.py korrigiert</li>
+</ul>
+<h1>v0.6.0 - 19.09.2015</h1>
+<ul>
+    <li>Twitter-Timeline von "Eisbaeren_B" der Presseschau hinzugefügt</li>
+	<li>Die Presseschau kann jetzt auf Mobilbrowsern &uuml;ber ein Icon in der Men&uuml;leiste aufgerufen werden.</li>
+	<li>Tippgame-Tools: twitt-fetch.py - holt &uuml;ber das Twitter-API die Tweets der Eisb&auml;ren Berlin</li>
+	<li>FAQs angepasst</li>
+    <li><b>Bugfix</b>: Tippgame-Tools: tipp_reminder.py bei der Liste der Spielst&auml;nde wird jetzt "get_last_match()" zur Ermittlung des Spieltages benutzt.<b>Danke Josi f&uuml;r das J&ouml;&ouml;&ouml;&ouml;&ouml;rn</b></li>
+</ul>
+
+<h1>v0.5.3 - 15.09.2015</h1>
+<ul>
+    <li>Hinweis, der auf die neue URL des Tippspiels <a href="http://tippspiel.dynamop.de"> http://tippspiel.dynamop.de</a> verweist, sofern die alte URL aufgerufen wurde</li>
+    <li>Tippgame-Tools: Erste Version des get_score Scripts, das die Spielst&auml;nde und Schiedsrichternamen von der DEL Seite holt und in die Datenbank eintr&auml;t</li>
+    <li>Tipp-Formular: Es wird jetzt ein Beispieltipp angezeigt, um das Tippformat zu verdeutlichen.</li>
+    <li>Bei Mobilbrowsern werden Home- und Quicktipp-Buttons in der Men&uuml;leiste angezeigt</li>
+    <li><b>Fairness-Feature:</b> Tipper, die Ihre Tipps verbergen, bekommen keine Tipps, die in der Zukunft liegen, angezeigt.</li>
+    <li><b>Bugfix</b>: get_u_data() Fehlermeldung wenn ein bereits angemeldeter User einen Aktivierungslink drückt.<b>Danke Hansi</b></li>
+    <li><b>Bugfix</b>: get_u_data() Zus&auml;tzliche &Uuml;berpr&uuml;fung ob der Nutzer Mitglied der in usersettings eingetragenen Gruppe ist. <b>Danke Thomas</b></li>
+    <li><b>Bugfix</b>: get_tipstats() AntiEBB Tipps Webseite wird jetzt ohne Fehlermeldung angezeigt, wenn kein AntiEBB-Tipp vorliegt. <b>Danke Katrin</b></li>
+    <li><b>Bugfix</b>: process_tip() bei einem fehlerhaften Tipp wird jetzt bei der Datenbankabfrage auf die richtige Variable ("rmatch_id") referenziert. <b>Danke Florian</b></li>
+    <li><b>Bugfix</b>: Tabelle usersettings: season_id wird auf die aktuellste Saison gesetzt wenn kein Eintrag in usersettings vorhanden ist.</li>
+    <li><b>Bugfix</b>: view.py, myfunctions.py - Korrekte Zeitzonendarstellung und Verarbeitung (datetime.datetime.fromtimestamp enth&auml;t jetzt tz variable)</li>
+    <li><b>Bugfix</b>: Datenbank - unix-timestamp korrigiert</li>
+    <li><b>Bugfix</b>: get_matches() - bei Spieltagen ohne Ergebnis wird "None" durch "blank" ersetzt</li>
+</ul>
+<h1>v0.5.2 - 12.09.2015</h1>
+<ul>
+    <li>Tippgame-Tools: Erste Version des Josi-Bots, der immer "4:2"/"2:4" tippt</li>
+	<li><b>Bugfix</b>: change_settings() - Verarbeitung des hide_tips Parameters wenn kein Eintrag in der usersettings-Tabelle</li>
+	<li><b>Bugfix</b>: edit_settings() - threema lookup f&uuml;hrt nicht mehr zu einem Fehler wenn keine ID konfiguriert ist</li>
+	<li><b>Bugfix</b>: Umlautanzeige im Adminpanel funktioniert jetzt wieder</li>
+</ul>
+<h1>v0.5.1 - 09.09.2015</h1>
+<ul>
+	<li><b>Bugfix</b>: Tips wurden trotz gesetzter "hide_tips" Option in den Usertips angezeigt (mytips()) <b>Danke Marcus</b>.</li>
+</ul>
+<h1>v0.5 - 08.09.2015</h1>
+<ul>
+    <li>In der Matchliste werden die Spiele mit Fernseh&uuml;bertragung angezeigt.</li>
+    <li>In der Matchliste wird ein Link auf das jeweilige Fanradio angezeigt. Bei Ausw&auml;rtsspielen wird der EBB Link angezeigt, bei Heimspielen der Link der G&auml;ste.</li>
+    <li>WhatsApp-Nachricht, wenn ein Tipper die Option "Tipps verbergen" aktiviert oder deaktiviert</li>
+	<li><b>Bugfix</b>: der Marcus-Veschwindebug ist hoffentlich gefixt</li>
+    <li><b>Bugfix</b>: cron_create.py: Adaption auf Vixie crontab Format </li>
+    <li>&Auml;nderung am Datenbankschema (v.0018_auto_20150904_2211)
+	<ul>
+	    <li>Tabelle "game.usersettings" - neues Feld "threema"</li>
+	    <li>Tabelle "game.usersettings" - neues Feld "Threema-Reminder"</li>
+	    <li>Tabelle "game.match" - neues Feld "tv"</li>
+	    <li>Tabelle "game.teams" - neues Feld "radio_url"</li>
+    </ul></li>
+</ul>
+
+<h1>v0.4 - 02.09.2015</h1>
+<ul>
+    <li>erste Version der <a href="/article/">EBB-Presseschau</a></li>
+    <li>erster Version der Tippgame-Tools:
+	<ul>
+	    <li>Tipp-Erinnermich 90,60,30 min vor Spielanfang and die WhatsApp-Gruppe (tipp_reminder.py)</li>
+	    <li>Alle Tips nach Spielanfang in einer WhatsApp-Gruppe (tipp_reminder.py)</li>
+		<li>Cronjob Erstellung f&uuml;r tipp_reminder.py (cron_create.py)
+	</ul>
+	</li>
+    <li>&Auml;nderung am Datenbankschema (v.0017)
+	<ul>
+	    <li>Tabelle "game.groupsettings" - neues Feld "reminder"</li>
+    </ul></li>
+    <li>def get_next_match() liefert jetzt match_id und match_date</li>
+	<li><b>Bugfix</b>: libyowsup.py class SendLayer() Übernahme aus yowsup-2.3.185, um sporadische Probleme beim Senden von Whatsapp-Nachrichten zu beheben.</li>
+
+</ul>
+
+<h1>v0.3.1 - 27.08.2015</h1>
+<ul>
+    <li>&Auml;nderung am Datenbankschema (v.0016_auto_20150826_1415)
+	<ul>
+	    <li>Tabelle "game.groupsettings" - neues Feld "p_notip"</li>
+	    <li>Tabelle "game.groupsettings" - default Wert 0 f&uuml;r alle  "p_*" Felder</li>
+    </ul></li>
+    <li>bei fehlerhaften Tips wird auf die Tippseite weitergeleitet</li>
+	<li><b>Bugfix</b>: group_filter hat jetzt einen Defaultwert ('default')</li>
+	<li><b>Bugfix</b>: group_filter in process_tip()</li>
+	<li><b>Bugfix</b>: &Uuml;berpr&uuml;fung des Tippformates "int():int()"</li>
+	<li><b>Bugfix</b>: "Gleichstand gibts nur bei Randsportarten"-Fix</li>
+</ul>
+
+<h1>v0.3 - 26.08.2015</h1>
+<ul>
+	<li>Es werden jetzt mehrere Tippgruppen pro Benutzer unterst&uuml;tzt</li>
+    <li>Excel-Export enth&auml;t jetzt den Namen der Tipp-Gruppe</li>
+	<li>Seite mit den <a href="/game/rules">Spielregeln</a> erstellt</li>
+	<li><a href="/game/contact">FAQ Seite</a> eingef&uuml;gt</li>
+	<li>WhatsApp-Unterst&uuml;tzung f&uuml;r
+	    <ul>
+		    <li>Erfolgreiche Benutzerregistrierung</li>
+		    <li>Fehlgeschlagene Benutzerregistrierung</li>
+		    <li>erfolgreiche Benutzeraktivierung</li>
+		    <li>Hinzuf&uuml;gen zu einer Tippgruppe</li>
+		    <li>Entfernen von einer Tippgruppe</li>
+		</ul></li>
+</ul>
+
+<h1>v0.2 - 20.08.2015</h1>
+<ul>
+   <li>Changelog eingef&uuml;hrt</li>
+   <li>Erweiterung des UserAuth-Modules um eine Registrierungsfunktion für neue Benutzer</li>
+   <li>Captcha Überprüfung bei der Registrierung von neuen Benutzern</li>
+   <li>Excelexport der Testergenisse mittels xlsxwriter (def getreport())</li>
+   <li>Spielplan kann als ics Kalenderdatei exportiert werden (def getics())</li>
+   <li>einzelne Spiele k&ouml;nnen als Kalendereintr&auml;ge im ics Format exportiert werden(def getics(m[id]))</li>
+   <li>Tipps können verborgen werden</li>
+   <li><b>Bugfix</b>: login.html - Ausnahmebehandlung wenn "next"-Variable "/" ist</li>
+   <li><b>Bugfix</b>: login.html - Ausnahmebehandlung wenn "next"-Variable "/user/login" ist</li>
+   <li><b>Bugfix</b>: logout() - genereller Redirct auf /game/index.html nach Logout eines Benutzers <br>(ich weiss nicht, was ich geraucht habe als ich das kaputte Verhalten in v0.1 gebaut habe, aber es muss verdammt gut gewesen sein)
+   <li><b>Bugfix</b>: views.py - Umstellung auf HttpResponseRedirect('%s?next=%s' % (settings.LOGIN_URL, request.path)) für nichtangemeldete Benutzer</li>
+   <li><b>Bugfix</b>: tpd - tip_list - zus&auml;tzlicher Filter für u_season_id</li>
+   <li><b>Bugfix</b>: get_next_match - Default-Value für match_id (erster Eintrag der Liste)</li>
+</ul>
+
+
+<h1>v0.1 - 22.02.2015</h1>
+<ul>
+   <li>erste Version</li>
+</ul>
+</div>
+{% if request.mobile == False %}
+<div class="w3-col w30percent"></div>
+{% else %}
+<div class="w3-col w02percent">&nbsp;</div>
+{% endif %}
+{% endblock %}
+
