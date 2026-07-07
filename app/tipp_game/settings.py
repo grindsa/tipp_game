@@ -28,7 +28,7 @@ def env_bool(name, default=False):
     return os.environ.get(name, str(default)).lower() in ['true', '1', 'yes', 'on']
 
 
-DJANGO_ENV = os.environ.get('DJANGO_ENV', 'development').lower()
+DJANGO_ENV = os.environ.get('DJANGO_ENV', 'production').lower()
 IS_PRODUCTION = DJANGO_ENV in ['prod', 'production']
 
 # Read the secret key from environment and fail fast in production if missing.

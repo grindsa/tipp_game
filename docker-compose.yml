@@ -31,7 +31,7 @@ services:
       - /srv/data/tipp_game/logs:/app/logs
     environment:
       HOME: /tmp
-      DJANGO_ENV: ${DJANGO_ENV:-development}
+      DJANGO_ENV: ${DJANGO_ENV:?DJANGO_ENV must be set (production|development)}
       DJANGO_SETTINGS_MODULE: tipp_game.settings
       DB_NAME: ${MARIADB_DATABASE}
       DB_USER: ${MARIADB_USER}
