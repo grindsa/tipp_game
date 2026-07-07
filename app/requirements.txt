@@ -10,7 +10,7 @@ feedparser
 requests
 dateparser
 shapely
-django_otp
+django-otp
 jsonfield
 gunicorn>=21.0
 mysqlclient>=2.2.0

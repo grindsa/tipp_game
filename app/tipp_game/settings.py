@@ -92,8 +92,9 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    #'django_otp',
-    #'django_otp.plugins.otp_totp',
+    'django_otp',
+    'django_otp.plugins.otp_totp',
+    'django_otp.plugins.otp_static',
     'game',
     'userauth.apps.UserauthConfig',
     'captcha',
@@ -107,7 +108,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    #'django_otp.middleware.OTPMiddleware',
+    'django_otp.middleware.OTPMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'mobi.middleware.MobileDetectionMiddleware',
@@ -264,7 +265,7 @@ TR_SK = os.environ.get('TR_SK', '')
 MBA_GEO_LOCATION = '52.5060000,13.4434000'
 GEO_THRESHOLD    = 0.006
 
-OTP_TOTP_ISSUER = os.environ.get('EMAIL_HOST', 'EMAIL_HOST')
+OTP_TOTP_ISSUER = os.environ.get('OTP_TOTP_ISSUER', 'tipp_game')
 
 # some security settings
 SESSION_COOKIE_SECURE = not DEBUG
