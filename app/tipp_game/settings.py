@@ -38,8 +38,11 @@ if not SECRET_KEY:
         raise ImproperlyConfigured('DJANGO_SECRET_KEY must be set in production')
     SECRET_KEY = 'django-insecure-dev-only-change-me'
 
-# Keep development convenient, but default to safe values in production.
-DEBUG = env_bool('DJANGO_DEBUG', default=(not IS_PRODUCTION))
+# Keep development convenient, but never allow DEBUG in production.
+if IS_PRODUCTION:
+    DEBUG = False
+else:
+    DEBUG = env_bool('DJANGO_DEBUG', default=True)
 
 # In development/non-production allow any host.
 if IS_PRODUCTION:
