@@ -30,7 +30,7 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - tg_static_volume:/app/static
+      - /srv/data/tipp_game/static:/app/static
       - tg_media_volume:/app/media
       - /srv/data/tipp_game/logs:/app/logs
     environment:
@@ -98,7 +98,6 @@ services:
 
 volumes:
   tg_data:
-  tg_static_volume:
   tg_media_volume:
 
 networks:

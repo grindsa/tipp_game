@@ -41,7 +41,8 @@ App is exposed on port 8000.
 ## Deployment Notes
 
 - The web service runs collectstatic automatically before gunicorn starts.
-- The named volume mounted at /app/static starts empty on fresh deployments, so collectstatic is required.
+- Static files are persisted on the host at /srv/data/tipp_game/static (mounted to /app/static).
+- Ensure /srv/data/tipp_game/static exists and is writable by APP_UID:APP_GID before startup.
 - Django admin files under app/static/admin are generated artifacts and should not be committed to git.
 - The image user is created from APP_UID/APP_GID build args to keep file ownership stable across container restarts.
 - If you changed APP_UID/APP_GID or reused an old static/media volume, run a one-time ownership fix from root before starting web.
