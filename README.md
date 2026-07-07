@@ -47,5 +47,6 @@ App is exposed on port 8000.
 - If you changed APP_UID/APP_GID or reused an old static/media volume, run a one-time ownership fix from root before starting web.
 - Helper script for ownership reset:
    ./scripts/fix-volume-permissions.sh
+   The script reads APP_UID/APP_GID directly from .env and does not require shell-compatible formatting for other variables.
 - After deploy or upgrade, verify static assets if admin styling looks broken:
    docker compose logs -f web
