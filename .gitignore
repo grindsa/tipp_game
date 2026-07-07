@@ -187,3 +187,4 @@ cython_debug/
 .DS_Store
 *.bak
 *.bup
+app/static/admin/

@@ -37,3 +37,11 @@ App is exposed on port 8000.
 - The project uses MySQL/MariaDB and a secondary wallabag database connection.
 - For development and CI, values are sourced via environment variables.
 - Backup artifacts (.old/.bak/.bup) are intentionally excluded from source control.
+
+## Deployment Notes
+
+- The web service runs collectstatic automatically before gunicorn starts.
+- The named volume mounted at /app/static starts empty on fresh deployments, so collectstatic is required.
+- Django admin files under app/static/admin are generated artifacts and should not be committed to git.
+- After deploy or upgrade, verify static assets if admin styling looks broken:
+   docker compose logs -f web

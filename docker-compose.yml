@@ -21,6 +21,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    command: >
+      sh -c "python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:8000 tipp_game.wsgi:application"
     user: "${APP_UID}:${APP_GID}"
     restart: unless-stopped
     ports:
