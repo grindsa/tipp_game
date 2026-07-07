@@ -37,9 +37,6 @@ services:
       DB_USER: ${MARIADB_USER}
       DB_PASSWORD: ${MARIADB_PASSWORD}
       DB_HOST: db
-      WB_NAME: ${WB_DATABASE}
-      WB_USER: ${WB_USER}
-      WB_PASSWORD: ${WB_PASSWORD}
       DB_PORT: "3306"
       DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
       DJANGO_DEBUG: ${DJANGO_DEBUG}
@@ -58,6 +55,33 @@ services:
       TR_SECRET: ${TR_SECRET}
       TR_SK: ${TR_SK}
       OTP_TOTP_ISSUER: ${OTP_TOTP_ISSUER}
+    networks:
+      - tg-internal
+      - proxy
+    depends_on:
+      db:
+        condition: service_healthy
+  wallabag:
+    image: wallabag/wallabag
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MARIADB_ROOT_PASSWORD}
+      - SYMFONY__ENV__DATABASE_DRIVER=pdo_mysql
+      - SYMFONY__ENV__DATABASE_HOST=db
+      - SYMFONY__ENV__DATABASE_PORT=3306
+      - SYMFONY__ENV__DATABASE_NAME=${WB_DATABASE}
+      - SYMFONY__ENV__DATABASE_USER=${WB_USER}
+      - SYMFONY__ENV__DATABASE_PASSWORD=${WB_PASSWORD}
+      - SYMFONY__ENV__DATABASE_CHARSET=utf8mb4
+      - SYMFONY__ENV__DATABASE_TABLE_PREFIX="wallabag_"
+      - SYMFONY__ENV__MAILER_DSN=smtp://127.0.0.1
+      - SYMFONY__ENV__FROM_EMAIL=${WB_EMAIL}
+      - SYMFONY__ENV__DOMAIN_NAME=${WB_URL}
+      - SYMFONY__ENV__SERVER_NAME=${WB_SERVER_NAME}
+    ports:
+      - "80"
+    volumes:
+      - /srv/data/tipp_game/wallabag/images:/var/www/wallabag/web/assets/images
     networks:
       - tg-internal
       - proxy
