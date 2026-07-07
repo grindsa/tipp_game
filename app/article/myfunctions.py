@@ -3,13 +3,27 @@
 from __future__ import absolute_import
 import time
 import math
-import locale
 import random
 from datetime import timedelta, datetime
 from html.parser import HTMLParser
 import html.entities
 from article.models import Blacklist, Articletopwords
 from game.myfunctions import sort_dic
+
+GERMAN_MONTH_NAMES = {
+    1: 'Januar',
+    2: 'Februar',
+    3: 'Maerz',
+    4: 'April',
+    5: 'Mai',
+    6: 'Juni',
+    7: 'Juli',
+    8: 'August',
+    9: 'September',
+    10: 'Oktober',
+    11: 'November',
+    12: 'Dezember',
+}
 
 class HTMLTextExtractor(HTMLParser):
     """ HTMLTextExtractor class """
@@ -48,14 +62,8 @@ def get_week_dates(dat_e):
 
 def get_month(date_):
     """ get month name """
-    try:
-        locale.setlocale(locale.LC_TIME, 'de_DE.UTF-8')
-    except BaseException:
-        locale.setlocale(locale.LC_TIME, 'deu_deu')
-
-    # get month in german language
-    month = datetime.date(datetime.strptime(date_, "%Y-%m-%d %H:%M:%S")).strftime('%B')
-    return month
+    month_number = datetime.strptime(date_, "%Y-%m-%d %H:%M:%S").month
+    return GERMAN_MONTH_NAMES.get(month_number, '')
 
 def get_month_string(date_):
     """ get month name """
@@ -65,13 +73,8 @@ def get_month_string(date_):
 
 def get_month_name(month):
     """ get month name """
-    try:
-        locale.setlocale(locale.LC_TIME, 'de_DE.UTF-8')
-    except BaseException:
-        locale.setlocale(locale.LC_TIME, 'deu_deu')
-
-    month_name = time.strftime('%B', datetime.strptime(month, "%y-%m").timetuple())
-    return month_name
+    month_number = datetime.strptime(month, "%y-%m").month
+    return GERMAN_MONTH_NAMES.get(month_number, '')
 
 def get_next_previous_month_strings(date_string):
     """ get previous month """
