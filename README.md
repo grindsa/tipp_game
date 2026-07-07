@@ -43,5 +43,9 @@ App is exposed on port 8000.
 - The web service runs collectstatic automatically before gunicorn starts.
 - The named volume mounted at /app/static starts empty on fresh deployments, so collectstatic is required.
 - Django admin files under app/static/admin are generated artifacts and should not be committed to git.
+- The image user is created from APP_UID/APP_GID build args to keep file ownership stable across container restarts.
+- If you changed APP_UID/APP_GID or reused an old static/media volume, run a one-time ownership fix from root before starting web.
+- Helper script for ownership reset:
+   ./scripts/fix-volume-permissions.sh
 - After deploy or upgrade, verify static assets if admin styling looks broken:
    docker compose logs -f web

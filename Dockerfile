@@ -22,6 +22,9 @@ RUN python -m pip install --upgrade pip setuptools wheel && \
 
 FROM python:3.13-slim
 
+ARG APP_UID
+ARG APP_GID
+
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1
@@ -33,7 +36,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libmariadb3 \
     libsodium23 \
     && rm -rf /var/lib/apt/lists/* && \
-    groupadd --system app && useradd --system --gid app --create-home --home-dir /home/app app
+    groupadd --gid ${APP_GID} app && useradd --uid ${APP_UID} --gid ${APP_GID} --create-home --home-dir /home/app app
 
 COPY --from=builder /wheels /wheels
 COPY app/requirements.txt /app/requirements.txt

@@ -21,9 +21,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        APP_UID: ${APP_UID:?APP_UID must be set}
+        APP_GID: ${APP_GID:?APP_GID must be set}
     command: >
       sh -c "python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:8000 tipp_game.wsgi:application"
-    user: "${APP_UID}:${APP_GID}"
     restart: unless-stopped
     ports:
       - "8000:8000"
