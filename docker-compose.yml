@@ -110,6 +110,8 @@ services:
       CRON_TARGET_DIR: ${CRON_TARGET_DIR:-/app/cron_out}
       CRON_TARGET_FILE: ${CRON_TARGET_FILE:-tipp_game}
       CRON_RUN_AS_USER: ${CRON_RUN_AS_USER:-root}
+      CRON_DRY_RUN: ${CRON_DRY_RUN:-false}
+      CRON_WRITE_BACKUP: ${CRON_WRITE_BACKUP:-true}
       CRON_EXECUTION_PREFIX: ${CRON_EXECUTION_PREFIX:-docker compose --project-directory /srv/stacks/tipp_game run --rm --no-deps jobs python}
     networks:
       - tg-internal

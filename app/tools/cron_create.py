@@ -3,8 +3,11 @@
 """Create daily cron entries for tippspiel."""
 from __future__ import absolute_import
 import os
+import shutil
 import sys
+import tempfile
 import time
+import fcntl
 
 from datetime import datetime
 from crontab import CronTab
@@ -38,7 +41,7 @@ def resolve_cron_filename():
         return target_path
 
     target_dir = os.environ.get('CRON_TARGET_DIR', '/etc/cron.d')
-    target_file = os.environ.get('CRON_TARGET_FILE', 'tippgame')
+    target_file = os.environ.get('CRON_TARGET_FILE', 'tipp_game')
     return os.path.join(target_dir, target_file)
 
 
@@ -53,7 +56,70 @@ def build_command(script_path, extra_args=''):
 
 def resolve_cron_user():
     """Resolve target user for generated cron entries."""
-    return os.environ.get('CRON_RUN_AS_USER', 'root')
+    return os.environ.get('CRON_RUN_AS_USER', 'joern')
+
+
+def resolve_dry_run(cli_args):
+    """Resolve dry-run mode from CLI or environment."""
+    if '--dry-run' in cli_args:
+        return True
+    return os.environ.get('CRON_DRY_RUN', '').strip().lower() in ('1', 'true', 'yes', 'on')
+
+
+def resolve_backup_enabled():
+    """Resolve whether to write a .bak backup before replacing cron file."""
+    value = os.environ.get('CRON_WRITE_BACKUP', 'true').strip().lower()
+    return value in ('1', 'true', 'yes', 'on')
+
+
+def resolve_lock_file():
+    """Resolve file path for overlap protection lock."""
+    return os.environ.get('CRON_LOCK_FILE', '/tmp/tipp_game_cron_create.lock')
+
+
+def resolve_lock_blocking():
+    """Resolve lock behavior. Default is non-blocking (skip when busy)."""
+    value = os.environ.get('CRON_LOCK_BLOCKING', 'false').strip().lower()
+    return value in ('1', 'true', 'yes', 'on')
+
+
+def acquire_script_lock(lock_file, blocking=False):
+    """Acquire advisory file lock and return an open handle that must stay alive."""
+    lock_handle = open(lock_file, 'a+')
+    flags = fcntl.LOCK_EX
+    if not blocking:
+        flags |= fcntl.LOCK_NB
+    try:
+        fcntl.flock(lock_handle.fileno(), flags)
+        return lock_handle
+    except BlockingIOError:
+        lock_handle.close()
+        raise
+
+
+def write_cron_file(cron, filename, dry_run=False, backup_enabled=True):
+    """Write cron file atomically, optionally creating a backup."""
+    cron_text = str(cron)
+
+    if dry_run:
+        print('# dry-run: cron output for {0}'.format(filename))
+        print(cron_text)
+        return
+
+    target_dir = os.path.dirname(filename) or '.'
+    fd, temp_path = tempfile.mkstemp(prefix='.cron_tmp_', dir=target_dir, text=True)
+    try:
+        with os.fdopen(fd, 'w') as fha:
+            fha.write(cron_text)
+
+        if backup_enabled and os.path.exists(filename):
+            shutil.copy2(filename, filename + '.bak')
+
+        os.replace(temp_path, filename)
+    except Exception:
+        if os.path.exists(temp_path):
+            os.unlink(temp_path)
+        raise
 
 
 def create_job(cron, command, comment):
@@ -78,7 +144,11 @@ def get_next_match(uts, season_id):
     """Get next match from database."""
     match_list = Match.objects.filter(season_id=season_id).order_by('date', 'matchday').values('id', 'date', 'matchday', 'tv')
 
-    match_id = match_list[0]['id']
+    first_match = match_list.first()
+    if not first_match:
+        return (None, None, False)
+
+    match_id = first_match['id']
     mtv = False
     match_date = None
     for match in match_list:
@@ -271,7 +341,7 @@ def notify_cron_update(no_bet):
         pass
 
 
-def create_cron_entries(tzone):
+def create_cron_entries(tzone, dry_run=False):
     """Create all cron entries."""
     threshold = 86400
     filename = resolve_cron_filename()
@@ -305,9 +375,30 @@ def create_cron_entries(tzone):
     notify_cron_update(no_bet)
 
     # add_recent_match_jobs(cron, script_dir, uts_now, threshold, l_match_date, match_id)
-    cron.write()
+    write_cron_file(cron, filename, dry_run=dry_run, backup_enabled=resolve_backup_enabled())
+
+
+def run(cli_args):
+    """Run script with lock protection."""
+    dry_run = resolve_dry_run(cli_args)
+    lock_file = resolve_lock_file()
+    lock_blocking = resolve_lock_blocking()
+    lock_handle = None
+    try:
+        lock_handle = acquire_script_lock(lock_file, blocking=lock_blocking)
+    except BlockingIOError:
+        print('lock active, skipping run: {0}'.format(lock_file))
+        return 0
+
+    try:
+        create_cron_entries(TIMEZONE, dry_run=dry_run)
+    finally:
+        if lock_handle:
+            lock_handle.close()
+
+    return 0
 
 
 if __name__ == "__main__":
     TIMEZONE = timezone('Europe/Berlin')
-    create_cron_entries(TIMEZONE)
+    sys.exit(run(sys.argv[1:]))
