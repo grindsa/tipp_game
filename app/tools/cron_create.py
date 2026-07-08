@@ -286,16 +286,16 @@ def create_cron_entries(tzone):
     self_job.hour.on(2)
     self_job.minute.on(5)
 
-    add_baseline_jobs(cron, script_dir)
+    # add_baseline_jobs(cron, script_dir)
 
     no_bet = 'n/a'
-    if match_date and match_date <= uts_now + threshold and uts_now < match_date:
-        no_bet = add_match_jobs(cron, script_dir, match_date, match_id, tzone)
+    # if match_date and match_date <= uts_now + threshold and uts_now < match_date:
+    #    no_bet = add_match_jobs(cron, script_dir, match_date, match_id, tzone)
 
     # only for poc - later please combine with the codeblock above
     notify_cron_update(no_bet)
 
-    add_recent_match_jobs(cron, script_dir, uts_now, threshold, l_match_date, match_id)
+    # add_recent_match_jobs(cron, script_dir, uts_now, threshold, l_match_date, match_id)
     cron.write()
 
 
