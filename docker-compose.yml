@@ -68,6 +68,59 @@ services:
     depends_on:
       db:
         condition: service_healthy
+
+  jobs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP_UID: ${APP_UID:?APP_UID must be set}
+        APP_GID: ${APP_GID:?APP_GID must be set}
+    command: ["python", "--version"]
+    restart: "no"
+    volumes:
+      - tg_media_volume:/app/media
+      - /srv/data/tipp_game/logs:/app/logs
+      - /srv/data/tipp_game/cron:/app/cron_out
+    environment:
+      HOME: /tmp
+      DJANGO_ENV: ${DJANGO_ENV:?DJANGO_ENV must be set (production|development)}
+      DJANGO_SETTINGS_MODULE: tipp_game.settings
+      DB_NAME: ${MARIADB_DATABASE}
+      DB_USER: ${MARIADB_USER}
+      DB_PASSWORD: ${MARIADB_PASSWORD}
+      WB_NAME: ${WB_DATABASE}
+      WB_USER: ${WB_USER}
+      WB_PASSWORD: ${WB_PASSWORD}
+      DB_HOST: db
+      DB_PORT: "3306"
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY}
+      DJANGO_DEBUG: ${DJANGO_DEBUG}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS}
+      EMAIL_HOST: ${EMAIL_HOST}
+      EMAIL_PORT: ${EMAIL_PORT}
+      EMAIL_HOST_USER: ${EMAIL_HOST_USER}
+      EMAIL_HOST_PASSWORD: ${EMAIL_HOST_PASSWORD}
+      ADMINS: ${ADMINS}
+      MAILER_LIST: ${MAILER_LIST}
+      CAPTCHA_LETTER_ROTATION: ${CAPTCHA_LETTER_ROTATION}
+      WA_SRV: ${WA_SRV}
+      WA_PORT: ${WA_PORT}
+      WA_ADMIN_NUMBER: ${WA_ADMIN_NUMBER}
+      TR_ID: ${TR_ID}
+      TR_SECRET: ${TR_SECRET}
+      TR_SK: ${TR_SK}
+      OTP_TOTP_ISSUER: ${OTP_TOTP_ISSUER}
+      CRON_TARGET_DIR: ${CRON_TARGET_DIR:-/app/cron_out}
+      CRON_TARGET_FILE: ${CRON_TARGET_FILE:-tippgame}
+      CRON_EXECUTION_PREFIX: ${CRON_EXECUTION_PREFIX:-docker compose --project-directory /srv/data/tipp_game run --rm --no-deps jobs python}
+    networks:
+      - tg-internal
+      - tg-egress
+    depends_on:
+      db:
+        condition: service_healthy
+
   wallabag:
     image: wallabag/wallabag
     restart: unless-stopped
@@ -103,6 +156,7 @@ volumes:
 networks:
   tg-internal:
     internal: true
+  tg-egress:
   proxy:
     external: true # Tells Docker Compose this network already exists
 

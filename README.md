@@ -51,3 +51,31 @@ App is exposed on port 8000.
    The script reads APP_UID/APP_GID directly from .env and does not require shell-compatible formatting for other variables.
 - After deploy or upgrade, verify static assets if admin styling looks broken:
    docker compose logs -f web
+
+## One-Shot Jobs Cron Export (PoC)
+
+The script [app/tools/cron_create.py](app/tools/cron_create.py) can be run in a one-shot container and write a cron file to a mounted host path.
+
+Environment variables:
+
+- `CRON_TARGET_PATH`: full output path for the generated cron file (highest priority)
+- `CRON_TARGET_DIR` + `CRON_TARGET_FILE`: output directory and filename if `CRON_TARGET_PATH` is not set
+- `CRON_EXECUTION_PREFIX`: optional command prefix added to each generated entry
+
+Why `CRON_EXECUTION_PREFIX` matters:
+
+- The generated cron file is consumed by host cron.
+- Commands inside that file must be executable on the host.
+- Use a prefix such as `docker compose ... run --rm jobs python` so each entry starts a one-shot job container.
+
+Example (concept):
+
+- `CRON_TARGET_DIR=/app/cron_out`
+- `CRON_TARGET_FILE=tippgame`
+- `CRON_EXECUTION_PREFIX=docker compose --project-directory /srv/data/tipp_game run --rm jobs python`
+
+Then run once per day:
+
+- `docker compose run --rm jobs python tools/cron_create.py`
+
+This requires mounting a host directory (for example `/srv/data/tipp_game/cron`) into the jobs container at `/app/cron_out`.
