@@ -109,7 +109,7 @@ services:
       OTP_TOTP_ISSUER: ${OTP_TOTP_ISSUER}
       CRON_TARGET_DIR: ${CRON_TARGET_DIR:-/app/cron_out}
       CRON_TARGET_FILE: ${CRON_TARGET_FILE:-tipp_game}
-      CRON_EXECUTION_PREFIX: ${CRON_EXECUTION_PREFIX:-docker compose --project-directory /srv/data/tipp_game run --rm --no-deps jobs python}
+      CRON_EXECUTION_PREFIX: ${CRON_EXECUTION_PREFIX:-docker compose --project-directory /srv/stacks/tipp_game run --rm --no-deps jobs python}
     networks:
       - tg-internal
       - tg-egress
