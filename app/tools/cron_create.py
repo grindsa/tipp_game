@@ -26,6 +26,10 @@ except ImportError:
 
 TIMEZONE = timezone('Europe/Berlin')
 
+SCRIPT_TIPP_REMINDER = 'tipp_reminder.py'
+SCRIPT_LOAD_VIDEO_STREAMS = 'load_video_streams.py'
+COMMENT_GRAB_VIDEO = 'grab video'
+
 
 def resolve_cron_filename():
     """Resolve cron output file from environment settings."""
@@ -47,9 +51,14 @@ def build_command(script_path, extra_args=''):
     return '{0}{1}'.format(script_path, suffix)
 
 
+def resolve_cron_user():
+    """Resolve target user for generated cron entries."""
+    return os.environ.get('CRON_RUN_AS_USER', 'root')
+
+
 def create_job(cron, command, comment):
-    """Create a new root cron job and return it."""
-    return cron.new(command=command, comment=comment, user='root')
+    """Create a new cron job and return it."""
+    return cron.new(command=command, comment=comment, user=resolve_cron_user())
 
 
 def create_script_job(cron, script_dir, script_name, comment, extra_args=''):
@@ -147,7 +156,7 @@ def add_match_jobs(cron, script_dir, match_date, match_id, tzone):
 
     if not no_bet:
         hour, minute = timestamp_to_hour_minute(match_date - 10800, tzone)
-        rem1 = create_script_job(cron, script_dir, 'tipp_reminder.py', '1st reminder')
+        rem1 = create_script_job(cron, script_dir, SCRIPT_TIPP_REMINDER, '1st reminder')
         rem1.hour.on(hour)
         rem1.minute.on(minute)
 
@@ -162,21 +171,21 @@ def add_match_jobs(cron, script_dir, match_date, match_id, tzone):
         hbot.minute.on(minute)
 
         hour, minute = timestamp_to_hour_minute(match_date - 7200, tzone)
-        rem2 = create_script_job(cron, script_dir, 'tipp_reminder.py', '2nd reminder')
+        rem2 = create_script_job(cron, script_dir, SCRIPT_TIPP_REMINDER, '2nd reminder')
         rem2.hour.on(hour)
         rem2.minute.on(minute)
 
         hour, minute = timestamp_to_hour_minute(match_date - 3600, tzone)
-        rem3 = create_script_job(cron, script_dir, 'tipp_reminder.py', '3rd reminder')
+        rem3 = create_script_job(cron, script_dir, SCRIPT_TIPP_REMINDER, '3rd reminder')
         rem3.hour.on(hour)
         rem3.minute.on(minute)
 
         hour, minute = timestamp_to_hour_minute(match_date - 1800, tzone)
-        rem4 = create_script_job(cron, script_dir, 'tipp_reminder.py', 'last reminder')
+        rem4 = create_script_job(cron, script_dir, SCRIPT_TIPP_REMINDER, 'last reminder')
         rem4.hour.on(hour)
         rem4.minute.on(minute)
 
-        msum = create_script_job(cron, script_dir, 'tipp_reminder.py', 'summary', '-s')
+        msum = create_script_job(cron, script_dir, SCRIPT_TIPP_REMINDER, 'summary', '-s')
         msum.hour.on(summary_hour)
         msum.minute.on(summary_minute)
 
@@ -236,15 +245,15 @@ def add_recent_match_jobs(cron, script_dir, uts_now, threshold, l_match_date, ma
     if lno_bet:
         return
 
-    vid1 = create_script_job(cron, script_dir, 'load_video_streams.py', 'grab video')
+    vid1 = create_script_job(cron, script_dir, SCRIPT_LOAD_VIDEO_STREAMS, COMMENT_GRAB_VIDEO)
     vid1.hour.on(5)
     vid1.minute.on(0)
 
-    vid2 = create_script_job(cron, script_dir, 'load_video_streams.py', 'grab video')
+    vid2 = create_script_job(cron, script_dir, SCRIPT_LOAD_VIDEO_STREAMS, COMMENT_GRAB_VIDEO)
     vid2.hour.on(7)
     vid2.minute.on(0)
 
-    vid3 = create_script_job(cron, script_dir, 'load_video_streams.py', 'grab video')
+    vid3 = create_script_job(cron, script_dir, SCRIPT_LOAD_VIDEO_STREAMS, COMMENT_GRAB_VIDEO)
     vid3.hour.on(10)
     vid3.minute.on(0)
 
@@ -289,7 +298,7 @@ def create_cron_entries(tzone):
     # add_baseline_jobs(cron, script_dir)
 
     no_bet = 'n/a'
-    # if match_date and match_date <= uts_now + threshold and uts_now < match_date:
+    #if match_date and match_date <= uts_now + threshold and uts_now < match_date:
     #    no_bet = add_match_jobs(cron, script_dir, match_date, match_id, tzone)
 
     # only for poc - later please combine with the codeblock above
