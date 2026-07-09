@@ -174,6 +174,14 @@ if [ -z "$REMOTE_DIR_NORM" ]; then
   REMOTE_DIR_NORM="/"
 fi
 
+REMOTE_DIR_SYNO_FALLBACK=""
+if printf '%s' "$REMOTE_DIR_NORM" | grep -Eq '^/volume[0-9]+/'; then
+  REMOTE_DIR_SYNO_FALLBACK="$(printf '%s' "$REMOTE_DIR_NORM" | sed -E 's#^/volume[0-9]+##')"
+  if [ -z "$REMOTE_DIR_SYNO_FALLBACK" ]; then
+    REMOTE_DIR_SYNO_FALLBACK="/"
+  fi
+fi
+
 if [ -z "${MARIADB_ROOT_PASSWORD:-}" ]; then
   log "ERROR: MARIADB_ROOT_PASSWORD must be set in .env"
   exit 1
@@ -317,21 +325,33 @@ log "Pruning local backups (keep=$LOCAL_KEEP)"
 ls -1dt "$out_dir"/${APP_NAME}-backup-*.tar.gz 2>/dev/null | awk "NR>$LOCAL_KEEP" | xargs -r rm -f
 
 if [ -n "$REMOTE_TARGET" ]; then
-  remote_file="$REMOTE_DIR_NORM/$(basename "$final_archive")"
+  remote_dir_use="$REMOTE_DIR_NORM"
+  if ! ssh $ssh_opts "$REMOTE_TARGET" "mkdir -p '$remote_dir_use' && test -d '$remote_dir_use'"; then
+    if [ -n "$REMOTE_DIR_SYNO_FALLBACK" ] && [ "$REMOTE_DIR_SYNO_FALLBACK" != "$REMOTE_DIR_NORM" ]; then
+      log "WARN: remote path $REMOTE_DIR_NORM not accepted by server; retrying with Synology-style path $REMOTE_DIR_SYNO_FALLBACK"
+      if ssh $ssh_opts "$REMOTE_TARGET" "mkdir -p '$REMOTE_DIR_SYNO_FALLBACK' && test -d '$REMOTE_DIR_SYNO_FALLBACK'"; then
+        remote_dir_use="$REMOTE_DIR_SYNO_FALLBACK"
+      else
+        log "ERROR: remote backup directory is not usable on server ($REMOTE_DIR_NORM and $REMOTE_DIR_SYNO_FALLBACK)"
+        exit 1
+      fi
+    else
+      log "ERROR: remote backup directory is not usable on server ($REMOTE_DIR_NORM)"
+      exit 1
+    fi
+  fi
+
+  remote_file="$remote_dir_use/$(basename "$final_archive")"
   log "Backup server: $REMOTE_TARGET"
-  log "Remote backup directory: $REMOTE_DIR_NORM"
+  log "Remote backup directory: $remote_dir_use"
   log "Uploading backup to $remote_file"
-  # shellcheck disable=SC2086
-  ssh $ssh_opts "$REMOTE_TARGET" "mkdir -p '$REMOTE_DIR_NORM'"
-  # shellcheck disable=SC2086
-  ssh $ssh_opts "$REMOTE_TARGET" "test -d '$REMOTE_DIR_NORM'"
   # shellcheck disable=SC2086
   echo "Uploading backup $final_archive to $REMOTE_TARGET:$remote_file"
   scp $ssh_opts "$final_archive" "$REMOTE_TARGET:$remote_file"
 
   log "Pruning remote backups (keep=$REMOTE_KEEP)"
   # shellcheck disable=SC2086
-  ssh $ssh_opts "$REMOTE_TARGET" "ls -1dt '$REMOTE_DIR_NORM'/${APP_NAME}-backup-*.tar.gz 2>/dev/null | awk 'NR>$REMOTE_KEEP' | xargs -r rm -f"
+  ssh $ssh_opts "$REMOTE_TARGET" "ls -1dt '$remote_dir_use'/${APP_NAME}-backup-*.tar.gz 2>/dev/null | awk 'NR>$REMOTE_KEEP' | xargs -r rm -f"
 else
   log "REMOTE_TARGET not set; skipping remote upload"
 fi
