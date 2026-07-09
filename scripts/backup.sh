@@ -8,7 +8,7 @@ SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
 PROJECT_DIR="${PROJECT_DIR:-$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd)}"
 COMPOSE_CMD="${COMPOSE_CMD:-docker compose --project-directory $PROJECT_DIR}"
 APP_NAME="${APP_NAME:-tipp_game}"
-BACKUP_ROOT="${BACKUP_ROOT:-$PROJECT_DIR/backups}"
+BACKUP_ROOT="${BACKUP_ROOT:-${TMPDIR:-/tmp}/tipp_game-backups}"
 TMP_ROOT="${TMP_ROOT:-${TMPDIR:-/tmp}}"
 LOCAL_KEEP="${LOCAL_KEEP:-}"
 REMOTE_KEEP="${REMOTE_KEEP:-}"
@@ -261,7 +261,8 @@ $COMPOSE_CMD exec -T db sh -lc "mariadb-dump -uroot -p\"$MARIADB_ROOT_PASSWORD\"
 gzip -9 "$db_sql"
 
 log "Exporting media volume from web container"
-$COMPOSE_CMD run --rm --no-deps -v "$work_dir:/backup" web sh -lc 'cd /app/media && tar -cf /backup/media.tar .'
+# Stream archive to host to avoid bind-mount write permission issues inside the container.
+$COMPOSE_CMD run --rm --no-deps web sh -lc 'cd /app/media && tar -cf - .' > "$media_tar"
 
 log "Packing host files"
 paths=""

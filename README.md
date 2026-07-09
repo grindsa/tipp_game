@@ -80,6 +80,7 @@ Cron integration:
 
 Backup-related `.env` variables:
 
+- `BACKUP_ROOT` (optional, default `/tmp/tipp_game-backups`): local directory where backup archives are written.
 - `REMOTE_TARGET` (optional): backup target in `user@host` format. If empty, upload is skipped.
 - `REMOTE_DIR` (optional, default `/srv/backups/tipp_game`): remote destination directory.
 - `SSH_KEY` (optional): absolute path to private key used for `ssh/scp`.
