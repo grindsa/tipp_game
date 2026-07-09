@@ -116,6 +116,7 @@ def write_cron_file(cron, filename, dry_run=False, backup_enabled=True):
             shutil.copy2(filename, filename + '.bak')
 
         os.replace(temp_path, filename)
+        os.chmod(filename, 0o644)
     except Exception:
         if os.path.exists(temp_path):
             os.unlink(temp_path)
