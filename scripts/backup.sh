@@ -128,6 +128,16 @@ if [ ! -f "$env_file" ]; then
   exit 1
 fi
 
+# For this backup script, BACKUP_ROOT and TMP_ROOT from .env should override existing values.
+env_backup_root="$(read_env_value BACKUP_ROOT "$env_file")"
+if [ -n "$env_backup_root" ]; then
+  BACKUP_ROOT="$env_backup_root"
+fi
+env_tmp_root="$(read_env_value TMP_ROOT "$env_file")"
+if [ -n "$env_tmp_root" ]; then
+  TMP_ROOT="$env_tmp_root"
+fi
+
 if [ -z "${MARIADB_ROOT_PASSWORD:-}" ]; then
   MARIADB_ROOT_PASSWORD="$(read_env_value MARIADB_ROOT_PASSWORD "$env_file")"
 fi
@@ -173,10 +183,16 @@ fi
 
 LOCAL_KEEP="${LOCAL_KEEP:-3}"
 REMOTE_KEEP="${REMOTE_KEEP:-12}"
+BACKUP_ROOT="${BACKUP_ROOT:-${TMPDIR:-/tmp}/tipp_game-backups}"
+TMP_ROOT="${TMP_ROOT:-${TMPDIR:-/tmp}}"
 REMOTE_DIR="${REMOTE_DIR:-/public/Backups/web-srv/tipp_game}"
 WA_NOTIFY_NUMBER="${WA_NOTIFY_NUMBER:-${WA_ADMIN_NUMBER:-}}"
 WA_NOTIFY_SRV="${WA_NOTIFY_SRV:-${WA_SRV:-}}"
 WA_NOTIFY_PORT="${WA_NOTIFY_PORT:-${WA_PORT:-}}"
+
+out_dir="$BACKUP_ROOT"
+work_dir="$TMP_ROOT/$run_id"
+final_archive="$out_dir/${run_id}.tar.gz"
 
 REMOTE_DIR_NORM="${REMOTE_DIR%/}"
 if [ -z "$REMOTE_DIR_NORM" ]; then
