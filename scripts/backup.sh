@@ -326,6 +326,7 @@ if [ -n "$REMOTE_TARGET" ]; then
   # shellcheck disable=SC2086
   ssh $ssh_opts "$REMOTE_TARGET" "test -d '$REMOTE_DIR_NORM'"
   # shellcheck disable=SC2086
+  echo "Uploading backup $final_archive to $REMOTE_TARGET:$remote_file"
   scp $ssh_opts "$final_archive" "$REMOTE_TARGET:$remote_file"
 
   log "Pruning remote backups (keep=$REMOTE_KEEP)"
