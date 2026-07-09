@@ -326,20 +326,20 @@ ls -1dt "$out_dir"/${APP_NAME}-backup-*.tar.gz 2>/dev/null | awk "NR>$LOCAL_KEEP
 
 if [ -n "$REMOTE_TARGET" ]; then
   remote_dir_use="$REMOTE_DIR_NORM"
-  if ! ssh $ssh_opts "$REMOTE_TARGET" "mkdir -p '$remote_dir_use' && test -d '$remote_dir_use'"; then
-    if [ -n "$REMOTE_DIR_SYNO_FALLBACK" ] && [ "$REMOTE_DIR_SYNO_FALLBACK" != "$REMOTE_DIR_NORM" ]; then
-      log "WARN: remote path $REMOTE_DIR_NORM not accepted by server; retrying with Synology-style path $REMOTE_DIR_SYNO_FALLBACK"
-      if ssh $ssh_opts "$REMOTE_TARGET" "mkdir -p '$REMOTE_DIR_SYNO_FALLBACK' && test -d '$REMOTE_DIR_SYNO_FALLBACK'"; then
-        remote_dir_use="$REMOTE_DIR_SYNO_FALLBACK"
-      else
-        log "ERROR: remote backup directory is not usable on server ($REMOTE_DIR_NORM and $REMOTE_DIR_SYNO_FALLBACK)"
-        exit 1
-      fi
-    else
-      log "ERROR: remote backup directory is not usable on server ($REMOTE_DIR_NORM)"
-      exit 1
-    fi
-  fi
+  #if ! ssh $ssh_opts "$REMOTE_TARGET" "mkdir -p '$remote_dir_use' && test -d '$remote_dir_use'"; then
+  #  if [ -n "$REMOTE_DIR_SYNO_FALLBACK" ] && [ "$REMOTE_DIR_SYNO_FALLBACK" != "$REMOTE_DIR_NORM" ]; then
+  #    log "WARN: remote path $REMOTE_DIR_NORM not accepted by server; retrying with Synology-style path $REMOTE_DIR_SYNO_FALLBACK"
+  #    if ssh $ssh_opts "$REMOTE_TARGET" "mkdir -p '$REMOTE_DIR_SYNO_FALLBACK' && test -d '$REMOTE_DIR_SYNO_FALLBACK'"; then
+  #      remote_dir_use="$REMOTE_DIR_SYNO_FALLBACK"
+  #    else
+  #      log "ERROR: remote backup directory is not usable on server ($REMOTE_DIR_NORM and $REMOTE_DIR_SYNO_FALLBACK)"
+  #      exit 1
+  #    fi
+  #  else
+  #    log "ERROR: remote backup directory is not usable on server ($REMOTE_DIR_NORM)"
+  #    exit 1
+  #  fi
+  #fi
 
   remote_file="$remote_dir_use/$(basename "$final_archive")"
   log "Backup server: $REMOTE_TARGET"
