@@ -164,7 +164,7 @@ fi
 
 LOCAL_KEEP="${LOCAL_KEEP:-3}"
 REMOTE_KEEP="${REMOTE_KEEP:-12}"
-REMOTE_DIR="${REMOTE_DIR:-/volume1/public/Backups/web-srv/tipp_game}"
+REMOTE_DIR="${REMOTE_DIR:-/public/Backups/web-srv/tipp_game}"
 WA_NOTIFY_NUMBER="${WA_NOTIFY_NUMBER:-${WA_ADMIN_NUMBER:-}}"
 WA_NOTIFY_SRV="${WA_NOTIFY_SRV:-${WA_SRV:-}}"
 WA_NOTIFY_PORT="${WA_NOTIFY_PORT:-${WA_PORT:-}}"
