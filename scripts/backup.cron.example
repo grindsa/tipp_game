@@ -1,0 +1,18 @@
+# tipp_game backup schedule (2nd Friday each month at 02:00)
+# Cron expression explanation:
+#   minute=0 hour=2 day=8-14 month=* weekday=5 (Friday)
+#
+# Install example:
+#   crontab -e
+#   (copy the active line below)
+#
+# Required setup:
+# - Configure backup-related variables in /srv/stacks/tipp_game/.env
+#   (for example: REMOTE_TARGET, REMOTE_DIR, SSH_KEY, LOCAL_KEEP, REMOTE_KEEP)
+# - WhatsApp notification uses WA_ADMIN_NUMBER, WA_SRV and WA_PORT from .env
+#   (optional override variables: WA_NOTIFY_NUMBER, WA_NOTIFY_SRV, WA_NOTIFY_PORT)
+# - Ensure SSH key auth works for backup target host
+# - Create destination directory or allow script to create it
+
+# Run backup (loads .env and then executes the manual wrapper)
+0 2 8-14 * 5 cd /srv/stacks/tipp_game && /bin/sh -c 'set -a; . ./.env; set +a; ./scripts/backup.manual.sh' >> /srv/stacks/tipp_game/logs/backup-cron.log 2>&1

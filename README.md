@@ -52,6 +52,40 @@ App is exposed on port 8000.
 - After deploy or upgrade, verify static assets if admin styling looks broken:
    docker compose logs -f web
 
+## Backup
+
+Backup tooling is provided via host scripts:
+
+- `scripts/backup.sh`: core backup workflow (DB dump + filesystem/media archives + checksums + optional SCP upload)
+- `scripts/backup.manual.sh`: manual wrapper for on-demand runs
+- `scripts/restore.sh`: restore workflow from a generated backup archive
+- `scripts/backup.cron.example`: cron template for the 2nd Friday schedule
+
+Recommended schedule (2nd Friday, 02:00):
+
+- `0 2 8-14 * 5`
+
+Cron integration:
+
+- Use the example line in `scripts/backup.cron.example`.
+- The cron command loads `.env` and then executes `scripts/backup.manual.sh`.
+
+Backup-related `.env` variables:
+
+- `REMOTE_TARGET` (optional): backup target in `user@host` format. If empty, upload is skipped.
+- `REMOTE_DIR` (optional, default `/srv/backups/tipp_game`): remote destination directory.
+- `SSH_KEY` (optional): absolute path to private key used for `ssh/scp`.
+- `LOCAL_KEEP` (optional, default `3`): number of local archives to retain.
+- `REMOTE_KEEP` (optional, default `12`): number of remote archives to retain.
+- `WA_ADMIN_NUMBER` (optional, default empty): WhatsApp destination number for final status notifications.
+- `WA_SRV` (optional): WhatsApp server used for notification transport.
+- `WA_PORT` (optional): WhatsApp server port used for notification transport.
+- `WA_NOTIFY_NUMBER` (optional): destination override. Falls back to `WA_ADMIN_NUMBER`.
+- `WA_NOTIFY_SRV` (optional): server override. Falls back to `WA_SRV`.
+- `WA_NOTIFY_PORT` (optional): port override. Falls back to `WA_PORT`.
+
+The backup requires DB settings from `.env` (`MARIADB_ROOT_PASSWORD`, `MARIADB_DATABASE`, and optional `WB_DATABASE`).
+
 ## One-Shot Jobs Cron Export (PoC)
 
 The script [app/tools/cron_create.py](app/tools/cron_create.py) can be run in a one-shot container and write a cron file to a mounted host path.
