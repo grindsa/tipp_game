@@ -96,7 +96,7 @@ notify_backup_result() {
   wa_output="$({
     WA_MSG="$wa_msg" WA_DEST="$WA_NOTIFY_NUMBER" WA_HOST="$WA_NOTIFY_SRV" WA_PORT_VAL="$WA_NOTIFY_PORT" \
       $COMPOSE_CMD run --rm --no-deps -e WA_MSG -e WA_DEST -e WA_HOST -e WA_PORT_VAL jobs \
-        python -c 'import os; from game.wa_hack_cli import simple_send; simple_send(os.environ["WA_HOST"], os.environ["WA_PORT_VAL"], os.environ["WA_DEST"], os.environ["WA_MSG"])'
+        python -c 'import os; from game.wa_hack_cli import simple_send; simple_send(os.environ["WA_HOST"], int(os.environ["WA_PORT_VAL"]), os.environ["WA_DEST"], os.environ["WA_MSG"])'
   } 2>&1)"
   wa_status=$?
   set -e
