@@ -169,6 +169,11 @@ WA_NOTIFY_NUMBER="${WA_NOTIFY_NUMBER:-${WA_ADMIN_NUMBER:-}}"
 WA_NOTIFY_SRV="${WA_NOTIFY_SRV:-${WA_SRV:-}}"
 WA_NOTIFY_PORT="${WA_NOTIFY_PORT:-${WA_PORT:-}}"
 
+REMOTE_DIR_NORM="${REMOTE_DIR%/}"
+if [ -z "$REMOTE_DIR_NORM" ]; then
+  REMOTE_DIR_NORM="/"
+fi
+
 if [ -z "${MARIADB_ROOT_PASSWORD:-}" ]; then
   log "ERROR: MARIADB_ROOT_PASSWORD must be set in .env"
   exit 1
@@ -223,7 +228,7 @@ if [ "$CHECK_CONFIG" -eq 1 ]; then
   echo "local_keep=$LOCAL_KEEP"
   echo "remote_keep=$REMOTE_KEEP"
   echo "remote_target=${REMOTE_TARGET:-<empty>}"
-  echo "remote_dir=$REMOTE_DIR"
+  echo "remote_dir=$REMOTE_DIR_NORM"
   echo "ssh_key=${SSH_KEY:-<empty>}"
   echo "db_list=$DB_LIST"
   echo "wa_notify_number=${WA_NOTIFY_NUMBER:-<empty>}"
@@ -312,15 +317,20 @@ log "Pruning local backups (keep=$LOCAL_KEEP)"
 ls -1dt "$out_dir"/${APP_NAME}-backup-*.tar.gz 2>/dev/null | awk "NR>$LOCAL_KEEP" | xargs -r rm -f
 
 if [ -n "$REMOTE_TARGET" ]; then
-  log "Uploading backup to $REMOTE_TARGET:$REMOTE_DIR"
+  remote_file="$REMOTE_DIR_NORM/$(basename "$final_archive")"
+  log "Backup server: $REMOTE_TARGET"
+  log "Remote backup directory: $REMOTE_DIR_NORM"
+  log "Uploading backup to $remote_file"
   # shellcheck disable=SC2086
-  ssh $ssh_opts "$REMOTE_TARGET" "mkdir -p '$REMOTE_DIR'"
+  ssh $ssh_opts "$REMOTE_TARGET" "mkdir -p '$REMOTE_DIR_NORM'"
   # shellcheck disable=SC2086
-  scp $ssh_opts "$final_archive" "$REMOTE_TARGET:$REMOTE_DIR/"
+  ssh $ssh_opts "$REMOTE_TARGET" "test -d '$REMOTE_DIR_NORM'"
+  # shellcheck disable=SC2086
+  scp $ssh_opts "$final_archive" "$REMOTE_TARGET:$remote_file"
 
   log "Pruning remote backups (keep=$REMOTE_KEEP)"
   # shellcheck disable=SC2086
-  ssh $ssh_opts "$REMOTE_TARGET" "ls -1dt '$REMOTE_DIR'/${APP_NAME}-backup-*.tar.gz 2>/dev/null | awk 'NR>$REMOTE_KEEP' | xargs -r rm -f"
+  ssh $ssh_opts "$REMOTE_TARGET" "ls -1dt '$REMOTE_DIR_NORM'/${APP_NAME}-backup-*.tar.gz 2>/dev/null | awk 'NR>$REMOTE_KEEP' | xargs -r rm -f"
 else
   log "REMOTE_TARGET not set; skipping remote upload"
 fi
