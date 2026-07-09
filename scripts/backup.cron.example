@@ -14,5 +14,5 @@
 # - Ensure SSH key auth works for backup target host
 # - Create destination directory or allow script to create it
 
-# Run backup (loads .env and then executes the manual wrapper)
-0 2 8-14 * 5 cd /srv/stacks/tipp_game && /bin/sh -c 'set -a; . ./.env; set +a; ./scripts/backup.manual.sh' >> /srv/stacks/tipp_game/logs/backup-cron.log 2>&1
+# Run backup (manual wrapper delegates to scripts/backup.sh, which reads .env safely)
+0 2 8-14 * 5 cd /srv/stacks/tipp_game && ./scripts/backup.manual.sh >> /srv/stacks/tipp_game/logs/backup-cron.log 2>&1

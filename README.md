@@ -61,6 +61,13 @@ Backup tooling is provided via host scripts:
 - `scripts/restore.sh`: restore workflow from a generated backup archive
 - `scripts/backup.cron.example`: cron template for the 2nd Friday schedule
 
+Config validation (non-destructive):
+
+- `./scripts/backup.sh --check-config`
+- `./scripts/backup.manual.sh --check-config`
+
+This mode resolves variables from `.env`, validates key prerequisites, prints the effective backup configuration, and exits without creating backup artifacts.
+
 Recommended schedule (2nd Friday, 02:00):
 
 - `0 2 8-14 * 5`
@@ -68,7 +75,8 @@ Recommended schedule (2nd Friday, 02:00):
 Cron integration:
 
 - Use the example line in `scripts/backup.cron.example`.
-- The cron command loads `.env` and then executes `scripts/backup.manual.sh`.
+- The cron command executes `scripts/backup.manual.sh`.
+- `scripts/backup.sh` reads `.env` directly and supports both `KEY=value` and `KEY: value` formats.
 
 Backup-related `.env` variables:
 

@@ -10,15 +10,16 @@ COMPOSE_CMD="${COMPOSE_CMD:-docker compose --project-directory $PROJECT_DIR}"
 APP_NAME="${APP_NAME:-tipp_game}"
 BACKUP_ROOT="${BACKUP_ROOT:-$PROJECT_DIR/backups}"
 TMP_ROOT="${TMP_ROOT:-${TMPDIR:-/tmp}}"
-LOCAL_KEEP="${LOCAL_KEEP:-3}"
-REMOTE_KEEP="${REMOTE_KEEP:-12}"
+LOCAL_KEEP="${LOCAL_KEEP:-}"
+REMOTE_KEEP="${REMOTE_KEEP:-}"
 REMOTE_TARGET="${REMOTE_TARGET:-}"    # user@host
-REMOTE_DIR="${REMOTE_DIR:-/volume1/public/Backups/web-srv/tipp_game}"
+REMOTE_DIR="${REMOTE_DIR:-}"
 SSH_KEY="${SSH_KEY:-}"                # optional private key path for ssh/scp
-WA_NOTIFY_NUMBER="${WA_NOTIFY_NUMBER:-${WA_ADMIN_NUMBER:-}}"  # optional override; defaults to WA_ADMIN_NUMBER
-WA_NOTIFY_SRV="${WA_NOTIFY_SRV:-${WA_SRV:-}}"
-WA_NOTIFY_PORT="${WA_NOTIFY_PORT:-${WA_PORT:-}}"
+WA_NOTIFY_NUMBER="${WA_NOTIFY_NUMBER:-}"
+WA_NOTIFY_SRV="${WA_NOTIFY_SRV:-}"
+WA_NOTIFY_PORT="${WA_NOTIFY_PORT:-}"
 LOG_FILE="${LOG_FILE:-$PROJECT_DIR/logs/backup.log}"
+CHECK_CONFIG=0
 
 # host paths
 STATIC_DIR="${STATIC_DIR:-/srv/data/tipp_game/static}"
@@ -32,9 +33,44 @@ work_dir="$TMP_ROOT/$run_id"
 out_dir="$BACKUP_ROOT"
 final_archive="$out_dir/${run_id}.tar.gz"
 
+if [ "${1:-}" = "--check-config" ]; then
+  CHECK_CONFIG=1
+  shift
+fi
+
+if [ "$#" -ne 0 ]; then
+  echo "Usage: $0 [--check-config]" >&2
+  exit 1
+fi
+
 log() {
   ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   printf '%s %s\n' "$ts" "$*" | tee -a "$LOG_FILE"
+}
+
+# Parse one value from .env without executing the file.
+read_env_value() {
+  key="$1"
+  file="$2"
+  awk -v k="$key" '
+    {
+      line=$0
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+      if (line == "" || line ~ /^#/) next
+
+      if (line ~ "^" k "[[:space:]]*=") {
+        sub("^" k "[[:space:]]*=[[:space:]]*", "", line)
+      } else if (line ~ "^" k "[[:space:]]*:") {
+        sub("^" k "[[:space:]]*:[[:space:]]*", "", line)
+      } else {
+        next
+      }
+
+      gsub(/^["\047]|["\047]$/, "", line)
+      print line
+      exit
+    }
+  ' "$file"
 }
 
 notify_backup_result() {
@@ -68,24 +104,70 @@ notify_backup_result() {
 
 finalize() {
   exit_code="$1"
-  notify_backup_result "$exit_code"
+  if [ "$CHECK_CONFIG" -eq 0 ]; then
+    notify_backup_result "$exit_code"
+  fi
   rm -rf "$work_dir"
 }
 trap 'finalize $?' EXIT
 
-mkdir -p "$out_dir" "$(dirname "$LOG_FILE")" "$work_dir"
-
 cd "$PROJECT_DIR"
 
-if [ ! -f "$PROJECT_DIR/.env" ]; then
+env_file="$PROJECT_DIR/.env"
+if [ ! -f "$env_file" ]; then
   log "ERROR: missing $PROJECT_DIR/.env"
   exit 1
 fi
 
-# shellcheck disable=SC1091
-set -a
-. "$PROJECT_DIR/.env"
-set +a
+if [ -z "${MARIADB_ROOT_PASSWORD:-}" ]; then
+  MARIADB_ROOT_PASSWORD="$(read_env_value MARIADB_ROOT_PASSWORD "$env_file")"
+fi
+if [ -z "${MARIADB_DATABASE:-}" ]; then
+  MARIADB_DATABASE="$(read_env_value MARIADB_DATABASE "$env_file")"
+fi
+if [ -z "${WB_DATABASE:-}" ]; then
+  WB_DATABASE="$(read_env_value WB_DATABASE "$env_file")"
+fi
+if [ -z "${REMOTE_TARGET:-}" ]; then
+  REMOTE_TARGET="$(read_env_value REMOTE_TARGET "$env_file")"
+fi
+if [ -z "${REMOTE_DIR:-}" ]; then
+  REMOTE_DIR="$(read_env_value REMOTE_DIR "$env_file")"
+fi
+if [ -z "${SSH_KEY:-}" ]; then
+  SSH_KEY="$(read_env_value SSH_KEY "$env_file")"
+fi
+if [ -z "${LOCAL_KEEP:-}" ]; then
+  LOCAL_KEEP="$(read_env_value LOCAL_KEEP "$env_file")"
+fi
+if [ -z "${REMOTE_KEEP:-}" ]; then
+  REMOTE_KEEP="$(read_env_value REMOTE_KEEP "$env_file")"
+fi
+if [ -z "${WA_ADMIN_NUMBER:-}" ]; then
+  WA_ADMIN_NUMBER="$(read_env_value WA_ADMIN_NUMBER "$env_file")"
+fi
+if [ -z "${WA_SRV:-}" ]; then
+  WA_SRV="$(read_env_value WA_SRV "$env_file")"
+fi
+if [ -z "${WA_PORT:-}" ]; then
+  WA_PORT="$(read_env_value WA_PORT "$env_file")"
+fi
+if [ -z "${WA_NOTIFY_NUMBER:-}" ]; then
+  WA_NOTIFY_NUMBER="$(read_env_value WA_NOTIFY_NUMBER "$env_file")"
+fi
+if [ -z "${WA_NOTIFY_SRV:-}" ]; then
+  WA_NOTIFY_SRV="$(read_env_value WA_NOTIFY_SRV "$env_file")"
+fi
+if [ -z "${WA_NOTIFY_PORT:-}" ]; then
+  WA_NOTIFY_PORT="$(read_env_value WA_NOTIFY_PORT "$env_file")"
+fi
+
+LOCAL_KEEP="${LOCAL_KEEP:-3}"
+REMOTE_KEEP="${REMOTE_KEEP:-12}"
+REMOTE_DIR="${REMOTE_DIR:-/volume1/public/Backups/web-srv/tipp_game}"
+WA_NOTIFY_NUMBER="${WA_NOTIFY_NUMBER:-${WA_ADMIN_NUMBER:-}}"
+WA_NOTIFY_SRV="${WA_NOTIFY_SRV:-${WA_SRV:-}}"
+WA_NOTIFY_PORT="${WA_NOTIFY_PORT:-${WA_PORT:-}}"
 
 if [ -z "${MARIADB_ROOT_PASSWORD:-}" ]; then
   log "ERROR: MARIADB_ROOT_PASSWORD must be set in .env"
@@ -101,19 +183,6 @@ if [ -n "$SSH_KEY" ]; then
   ssh_opts="-i $SSH_KEY"
 fi
 
-if ! $COMPOSE_CMD ps -q db >/dev/null 2>&1; then
-  log "ERROR: compose service 'db' not found"
-  exit 1
-fi
-
-db_sql="$work_dir/db.sql"
-db_sql_gz="$work_dir/db.sql.gz"
-files_tar="$work_dir/files.tar.gz"
-media_tar="$work_dir/media.tar"
-meta_txt="$work_dir/meta.txt"
-
-log "Starting backup run $run_id"
-
 # Build DB list dynamically from env (primary + optional wallabag DB).
 DB_LIST="${MARIADB_DATABASE:-}"
 if [ -n "${WB_DATABASE:-}" ]; then
@@ -124,6 +193,67 @@ if [ -z "$(printf '%s' "$DB_LIST" | tr -d ' ')" ]; then
   log "ERROR: no database names resolved from MARIADB_DATABASE/WB_DATABASE"
   exit 1
 fi
+
+if [ "$CHECK_CONFIG" -eq 1 ]; then
+  if $COMPOSE_CMD ps -q db >/dev/null 2>&1; then
+    db_service_status="ok"
+  else
+    db_service_status="not-found-or-unreachable"
+  fi
+
+  if [ -n "$REMOTE_TARGET" ]; then
+    remote_upload="enabled"
+  else
+    remote_upload="disabled"
+  fi
+
+  if [ -n "$WA_NOTIFY_NUMBER" ]; then
+    wa_notify="enabled"
+  else
+    wa_notify="disabled"
+  fi
+
+  echo "backup config check"
+  echo "project_dir=$PROJECT_DIR"
+  echo "compose_cmd=$COMPOSE_CMD"
+  echo "env_file=$env_file"
+  echo "app_name=$APP_NAME"
+  echo "backup_root=$BACKUP_ROOT"
+  echo "tmp_root=$TMP_ROOT"
+  echo "local_keep=$LOCAL_KEEP"
+  echo "remote_keep=$REMOTE_KEEP"
+  echo "remote_target=${REMOTE_TARGET:-<empty>}"
+  echo "remote_dir=$REMOTE_DIR"
+  echo "ssh_key=${SSH_KEY:-<empty>}"
+  echo "db_list=$DB_LIST"
+  echo "wa_notify_number=${WA_NOTIFY_NUMBER:-<empty>}"
+  echo "wa_notify_srv=${WA_NOTIFY_SRV:-<empty>}"
+  echo "wa_notify_port=${WA_NOTIFY_PORT:-<empty>}"
+  echo "static_dir=$STATIC_DIR"
+  echo "logs_dir=$LOGS_DIR"
+  echo "wallabag_img_dir=$WALLABAG_IMG_DIR"
+  echo "cron_dir=$CRON_DIR"
+  echo "remote_upload=$remote_upload"
+  echo "wa_notification=$wa_notify"
+  echo "db_service_status=$db_service_status"
+  echo "result=ok"
+  exit 0
+fi
+
+if ! $COMPOSE_CMD ps -q db >/dev/null 2>&1; then
+  log "ERROR: compose service 'db' not found"
+  exit 1
+fi
+
+mkdir -p "$out_dir" "$(dirname "$LOG_FILE")" "$work_dir"
+
+db_sql="$work_dir/db.sql"
+db_sql_gz="$work_dir/db.sql.gz"
+files_tar="$work_dir/files.tar.gz"
+media_tar="$work_dir/media.tar"
+meta_txt="$work_dir/meta.txt"
+
+log "Starting backup run $run_id"
 
 log "Creating MariaDB dump"
 # shellcheck disable=SC2086
