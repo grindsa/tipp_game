@@ -92,13 +92,22 @@ notify_backup_result() {
 
   wa_msg="$(date +%d.%m.%Y) tipp_game backup ${result}. run_id:${run_id}"
 
-  if WA_MSG="$wa_msg" WA_DEST="$WA_NOTIFY_NUMBER" WA_HOST="$WA_NOTIFY_SRV" WA_PORT_VAL="$WA_NOTIFY_PORT" \
-    $COMPOSE_CMD run --rm --no-deps -e WA_MSG -e WA_DEST -e WA_HOST -e WA_PORT_VAL jobs \
-      python -c 'import os; from game.wa_hack_cli import simple_send; simple_send(os.environ["WA_HOST"], os.environ["WA_PORT_VAL"], os.environ["WA_DEST"], os.environ["WA_MSG"])' >/dev/null 2>&1
-  then
+  set +e
+  wa_output="$({
+    WA_MSG="$wa_msg" WA_DEST="$WA_NOTIFY_NUMBER" WA_HOST="$WA_NOTIFY_SRV" WA_PORT_VAL="$WA_NOTIFY_PORT" \
+      $COMPOSE_CMD run --rm --no-deps -e WA_MSG -e WA_DEST -e WA_HOST -e WA_PORT_VAL jobs \
+        python -c 'import os; from game.wa_hack_cli import simple_send; simple_send(os.environ["WA_HOST"], os.environ["WA_PORT_VAL"], os.environ["WA_DEST"], os.environ["WA_MSG"])'
+  } 2>&1)"
+  wa_status=$?
+  set -e
+
+  if [ "$wa_status" -eq 0 ] && ! printf '%s' "$wa_output" | grep -Eqi 'unable to connect|connection error'; then
     log "WA notification sent to configured destination"
   else
     log "WARN: WA notification failed"
+    if [ -n "$wa_output" ]; then
+      log "WARN: WA notification output: $wa_output"
+    fi
   fi
 }
 
@@ -326,21 +335,6 @@ ls -1dt "$out_dir"/${APP_NAME}-backup-*.tar.gz 2>/dev/null | awk "NR>$LOCAL_KEEP
 
 if [ -n "$REMOTE_TARGET" ]; then
   remote_dir_use="$REMOTE_DIR_NORM"
-  #if ! ssh $ssh_opts "$REMOTE_TARGET" "mkdir -p '$remote_dir_use' && test -d '$remote_dir_use'"; then
-  #  if [ -n "$REMOTE_DIR_SYNO_FALLBACK" ] && [ "$REMOTE_DIR_SYNO_FALLBACK" != "$REMOTE_DIR_NORM" ]; then
-  #    log "WARN: remote path $REMOTE_DIR_NORM not accepted by server; retrying with Synology-style path $REMOTE_DIR_SYNO_FALLBACK"
-  #    if ssh $ssh_opts "$REMOTE_TARGET" "mkdir -p '$REMOTE_DIR_SYNO_FALLBACK' && test -d '$REMOTE_DIR_SYNO_FALLBACK'"; then
-  #      remote_dir_use="$REMOTE_DIR_SYNO_FALLBACK"
-  #    else
-  #      log "ERROR: remote backup directory is not usable on server ($REMOTE_DIR_NORM and $REMOTE_DIR_SYNO_FALLBACK)"
-  #      exit 1
-  #    fi
-  #  else
-  #    log "ERROR: remote backup directory is not usable on server ($REMOTE_DIR_NORM)"
-  #    exit 1
-  #  fi
-  #fi
-
   remote_file="$remote_dir_use/$(basename "$final_archive")"
   log "Backup server: $REMOTE_TARGET"
   log "Remote backup directory: $remote_dir_use"
