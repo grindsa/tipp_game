@@ -40,7 +40,9 @@ fi
 
 # shellcheck disable=SC1091
 set -a
+set +u
 . "$PROJECT_DIR/.env"
+set -u
 set +a
 
 if [ -z "${MARIADB_ROOT_PASSWORD:-}" ]; then
