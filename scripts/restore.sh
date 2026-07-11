@@ -10,10 +10,14 @@ COMPOSE_CMD="${COMPOSE_CMD:-docker compose --project-directory $PROJECT_DIR}"
 TMP_ROOT="${TMP_ROOT:-${TMPDIR:-/tmp}}"
 RESTORE_CONFIRM="${RESTORE_CONFIRM:-no}"
 RESTORE_CLEAR_MEDIA="${RESTORE_CLEAR_MEDIA:-yes}"
+RESTORE_HOST_FILES="${RESTORE_HOST_FILES:-yes}"
+RESTORE_HOST_FILES_STRICT="${RESTORE_HOST_FILES_STRICT:-no}"
 
 usage() {
   echo "Usage: $0 /path/to/tipp_game-backup-YYYYmmdd-HHMMSS.tar.gz"
   echo "Set RESTORE_CONFIRM=yes to run a destructive restore."
+  echo "Set RESTORE_HOST_FILES=no to skip restoring host filesystem archive."
+  echo "Set RESTORE_HOST_FILES_STRICT=yes to fail when host filesystem restore has errors."
 }
 
 if [ "${1:-}" = "" ]; then
@@ -82,8 +86,18 @@ echo "Validating checksum manifest"
 echo "Restoring database dump"
 gunzip -c "$work_dir/db.sql.gz" | $COMPOSE_CMD exec -T db sh -lc "mariadb -uroot -p\"$MARIADB_ROOT_PASSWORD\""
 
-echo "Restoring host filesystem archive"
-tar -xzmf "$work_dir/files.tar.gz" -C / --overwrite --no-same-owner --no-same-permissions
+if [ "$RESTORE_HOST_FILES" = "yes" ]; then
+  echo "Restoring host filesystem archive"
+  if ! tar -xzmf "$work_dir/files.tar.gz" -C / --overwrite --no-same-owner --no-same-permissions; then
+    if [ "$RESTORE_HOST_FILES_STRICT" = "yes" ]; then
+      echo "ERROR: host filesystem restore failed" >&2
+      exit 1
+    fi
+    echo "WARN: host filesystem restore had errors; continuing (set RESTORE_HOST_FILES_STRICT=yes to fail)" >&2
+  fi
+else
+  echo "Skipping host filesystem archive restore (RESTORE_HOST_FILES=no)"
+fi
 
 echo "Restoring media volume"
 if [ "$RESTORE_CLEAR_MEDIA" = "yes" ]; then
