@@ -83,13 +83,13 @@ echo "Restoring database dump"
 gunzip -c "$work_dir/db.sql.gz" | $COMPOSE_CMD exec -T db sh -lc "mariadb -uroot -p\"$MARIADB_ROOT_PASSWORD\""
 
 echo "Restoring host filesystem archive"
-tar -xzf "$work_dir/files.tar.gz" -C /
+tar -xzmf "$work_dir/files.tar.gz" -C / --overwrite --no-same-owner --no-same-permissions
 
 echo "Restoring media volume"
 if [ "$RESTORE_CLEAR_MEDIA" = "yes" ]; then
-  $COMPOSE_CMD run --rm --no-deps -v "$work_dir:/restore" web sh -lc 'rm -rf /app/media/* && cd /app/media && tar -xmf /restore/media.tar --no-same-owner --no-same-permissions'
+  $COMPOSE_CMD run --rm --no-deps -v "$work_dir:/restore" web sh -lc 'rm -rf /app/media/* && cd /app/media && tar -xmf /restore/media.tar --overwrite --no-same-owner --no-same-permissions'
 else
-  $COMPOSE_CMD run --rm --no-deps -v "$work_dir:/restore" web sh -lc 'cd /app/media && tar -xmf /restore/media.tar --no-same-owner --no-same-permissions'
+  $COMPOSE_CMD run --rm --no-deps -v "$work_dir:/restore" web sh -lc 'cd /app/media && tar -xmf /restore/media.tar --overwrite --no-same-owner --no-same-permissions'
 fi
 
 echo "Restore completed successfully."
