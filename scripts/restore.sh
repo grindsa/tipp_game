@@ -87,9 +87,9 @@ tar -xzf "$work_dir/files.tar.gz" -C /
 
 echo "Restoring media volume"
 if [ "$RESTORE_CLEAR_MEDIA" = "yes" ]; then
-  $COMPOSE_CMD run --rm --no-deps -v "$work_dir:/restore" web sh -lc 'rm -rf /app/media/* && cd /app/media && tar -xf /restore/media.tar'
+  $COMPOSE_CMD run --rm --no-deps -v "$work_dir:/restore" web sh -lc 'rm -rf /app/media/* && cd /app/media && tar -xmf /restore/media.tar --no-same-owner --no-same-permissions'
 else
-  $COMPOSE_CMD run --rm --no-deps -v "$work_dir:/restore" web sh -lc 'cd /app/media && tar -xf /restore/media.tar'
+  $COMPOSE_CMD run --rm --no-deps -v "$work_dir:/restore" web sh -lc 'cd /app/media && tar -xmf /restore/media.tar --no-same-owner --no-same-permissions'
 fi
 
 echo "Restore completed successfully."
