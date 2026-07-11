@@ -38,12 +38,19 @@ if [ ! -f "$PROJECT_DIR/.env" ]; then
   exit 1
 fi
 
-# shellcheck disable=SC1091
-set -a
-set +u
-. "$PROJECT_DIR/.env"
-set -u
-set +a
+# Parse only the required key from .env without executing the file as shell code.
+MARIADB_ROOT_PASSWORD="$(
+  awk '
+    /^[[:space:]]*#/ { next }
+    /^[[:space:]]*$/ { next }
+    /^[[:space:]]*MARIADB_ROOT_PASSWORD=/ {
+      line = $0
+      sub(/^[[:space:]]*MARIADB_ROOT_PASSWORD=/, "", line)
+      print line
+      exit
+    }
+  ' "$PROJECT_DIR/.env"
+)"
 
 if [ -z "${MARIADB_ROOT_PASSWORD:-}" ]; then
   echo "ERROR: MARIADB_ROOT_PASSWORD must be set in .env" >&2
