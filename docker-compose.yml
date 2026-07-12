@@ -28,8 +28,8 @@ services:
     command: >
       sh -c "python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:8000 tipp_game.wsgi:application"
     restart: unless-stopped
-    ports:
-      - "8000:8000"
+    # ports:
+    #  - "8000:8000"
     volumes:
       - /srv/data/tipp_game/static:/app/static
       - tg_media_volume:/app/media
@@ -137,8 +137,8 @@ services:
       - SYMFONY__ENV__FROM_EMAIL=${WB_EMAIL}
       - SYMFONY__ENV__DOMAIN_NAME=${WB_URL}
       - SYMFONY__ENV__SERVER_NAME=${WB_SERVER_NAME}
-    ports:
-      - "80"
+    # ports:
+    #   - "80"
     volumes:
       - /srv/data/tipp_game/wallabag/images:/var/www/wallabag/web/assets/images
     networks:
