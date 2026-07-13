@@ -21,6 +21,24 @@ Legacy Django tip-game application being renovated stepwise.
 6. Start server:
    python app/manage.py runserver 0.0.0.0:8000
 
+## Test Coverage
+
+Run coverage for Django tests with one helper script:
+
+- `./scripts/coverage.sh` (runs all `app/tests` targets)
+- `./scripts/coverage.sh tests.test_update_presseschau` (single target)
+
+The script uses:
+
+- Python from `.venv`
+- `app/.coveragerc`
+- default env `DJANGO_ENV=development` and `DJANGO_SECRET_KEY=test-secret`
+
+After the run:
+
+- terminal report is printed
+- HTML report is generated at `app/htmlcov/index.html`
+
 ## Quick Start (Docker Compose)
 
 1. Copy environment template:

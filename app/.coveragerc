@@ -1,0 +1,16 @@
+[run]
+branch = True
+source =
+    tools
+    game
+    article
+    userauth
+    trgw
+
+[report]
+omit =
+    manage.py
+    */migrations/*
+    */tests/*
+show_missing = True
+skip_covered = True

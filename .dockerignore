@@ -27,3 +27,4 @@ __pycache__/
 # Docker logs and local static builds
 .dockerignore
 docker-compose.yml
+

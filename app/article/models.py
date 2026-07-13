@@ -29,7 +29,7 @@ class Entries(models.Model):
     id = models.IntegerField(primary_key=True, blank=True)  # AutoField?
     title = models.TextField(blank=True, null=True)
     url = models.TextField(blank=True, null=True)
-    preview_picture = models.TextField(blank=True, null=True)    
+    preview_picture = models.TextField(blank=True, null=True)
     content = models.BinaryField(blank=True, null=True)
     user_id = models.TextField(blank=True, null=True)  # This field type is a guess.
     created_at = models.DateTimeField(blank=True, null=True)
@@ -98,7 +98,7 @@ class Feed(models.Model):
 
 class Feedlink(models.Model):
     """ feedlink """
-    url = models.CharField(max_length=250, blank=True, null=True)
+    url = models.CharField(max_length=512, blank=True, null=True)
     date = models.DateTimeField(default=timezone.now, blank=True)
     def __unicode__(self):
         return self.url

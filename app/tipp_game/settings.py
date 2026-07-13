@@ -8,6 +8,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 AUTH_LOG_DIR = os.path.join(BASE_DIR, 'logs')
 AUTH_LOG_FILE = os.path.join(AUTH_LOG_DIR, 'auth.log')
 AUTH_LOG_TO_FILE = True
+APP_LOG_LEVEL = os.environ.get('APP_LOG_LEVEL', 'INFO').upper()
+APP_LOG_FILE = os.environ.get('APP_LOG_FILE', os.path.join(AUTH_LOG_DIR, 'app.log'))
+APP_LOG_TO_FILE = True
 
 # Try to initialize the auth log path. If host volume permissions block writes,
 # fall back to console logging so the app can still boot.
@@ -18,9 +21,20 @@ try:
 except OSError:
     AUTH_LOG_TO_FILE = False
 
+try:
+    os.makedirs(os.path.dirname(APP_LOG_FILE), exist_ok=True)
+    with open(APP_LOG_FILE, 'a', encoding='utf-8') as app_log_probe:
+        app_log_probe.write('')
+except OSError:
+    APP_LOG_TO_FILE = False
+
 AUTH_FAILURE_LOGGER_HANDLERS = ['auth_failures_console']
 if AUTH_LOG_TO_FILE:
     AUTH_FAILURE_LOGGER_HANDLERS.insert(0, 'auth_failures_file')
+
+APP_LOGGER_HANDLERS = ['app_console']
+if APP_LOG_TO_FILE:
+    APP_LOGGER_HANDLERS.insert(0, 'app_file')
 
 
 def env_bool(name, default=False):
@@ -172,6 +186,10 @@ LOGGING = {
 			'()': 'django.utils.log.ServerFormatter',
 			'format': '[%(server_time)s] %(message)s',
         },
+        'app.standard': {
+            'format': '%(asctime)s %(levelname)s %(name)s:%(lineno)d %(message)s',
+            'datefmt': '%Y-%m-%dT%H:%M:%S%z',
+        },
         'auth.fail2ban': {
             'format': '%(asctime)s %(message)s',
             'datefmt': '%Y-%m-%dT%H:%M:%S%z',
@@ -198,6 +216,20 @@ LOGGING = {
 			'filters': ['require_debug_false'],
 			'class': 'django.utils.log.AdminEmailHandler'
         },
+        'app_console': {
+            'level': APP_LOG_LEVEL,
+            'class': 'logging.StreamHandler',
+            'formatter': 'app.standard',
+        },
+        'app_file': {
+            'level': APP_LOG_LEVEL,
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': APP_LOG_FILE,
+            'maxBytes': 10485760,
+            'backupCount': 5,
+            'delay': True,
+            'formatter': 'app.standard',
+        },
         'auth_failures_console': {
             'level': 'WARNING',
             'class': 'logging.StreamHandler',
@@ -222,6 +254,16 @@ LOGGING = {
 			'handlers': ['django.server'],
 			'level': 'INFO',
 			'propagate': False,
+        },
+        'game': {
+            'handlers': APP_LOGGER_HANDLERS,
+            'level': APP_LOG_LEVEL,
+            'propagate': False,
+        },
+        'tools': {
+            'handlers': APP_LOGGER_HANDLERS,
+            'level': APP_LOG_LEVEL,
+            'propagate': False,
         },
         'auth_failures': {
             'handlers': AUTH_FAILURE_LOGGER_HANDLERS,

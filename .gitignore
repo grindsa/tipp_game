@@ -188,3 +188,5 @@ cython_debug/
 *.bak
 *.bup
 app/static/admin/
+*.lcov
+app/*/migrations/*
