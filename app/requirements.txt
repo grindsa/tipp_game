@@ -17,3 +17,4 @@ mysqlclient>=2.2.0
 python-crontab
 googlenewsdecoder
 curl-cffi
+wa_hack_cli
