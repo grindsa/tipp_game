@@ -213,37 +213,37 @@ def add_baseline_jobs(cron, script_dir):
     psup = create_script_job(
         cron, script_dir, "update_presseschau.py", "update presseschau"
     )
-    psup.hour.during(6, 22).every(1)
-    psup.minute.on(50)
+    psup.hour.during(6, 22).every(3)
+    psup.minute.on(30)
 
-    trchk = create_script_job(
-        cron, script_dir, "chk_presseschau.py", "scan presseschau for updates"
-    )
-    if datetime.today().isoweekday() > 5:
-        trchk.hour.on(9, 21)
-    else:
-        trchk.hour.on(7, 19)
-    trchk.minute.on(0)
+    #trchk = create_script_job(
+    #    cron, script_dir, "chk_presseschau.py", "scan presseschau for updates"
+    #)
+    #if datetime.today().isoweekday() > 5:
+    #    trchk.hour.on(9, 21)
+    #else:
+    #    trchk.hour.on(7, 19)
+    #trchk.minute.on(0)
 
-    threema = create_script_job(
-        cron, script_dir, "threema_chk.py", "check threema credits"
-    )
-    threema.hour.on(23)
-    threema.minute.on(1)
+    #threema = create_script_job(
+    #    cron, script_dir, "threema_chk.py", "check threema credits"
+    #)
+    #threema.hour.on(23)
+    #threema.minute.on(1)
 
-    trtchk = create_script_job(
-        cron, script_dir, "get_training_times.py", "Check for new training times"
-    )
-    trtchk.hour.on(18)
-    trtchk.minute.on(10)
+    #trtchk = create_script_job(
+    #    cron, script_dir, "get_training_times.py", "Check for new training times"
+    #)
+    #trtchk.hour.on(18)
+    #trtchk.minute.on(10)
 
-    backup = create_script_job(cron, script_dir, "tipp_backup.sh", "backup tippgame")
-    backup.hour.on(1)
-    backup.minute.on(5)
+    #backup = create_script_job(cron, script_dir, "tipp_backup.sh", "backup tippgame")
+    #backup.hour.on(1)
+    #backup.minute.on(5)
 
-    rank = create_script_job(cron, script_dir, "get_ranking.py", "get del table")
-    rank.hour.on(2, 23)
-    rank.minute.on(0)
+    #rank = create_script_job(cron, script_dir, "get_ranking.py", "get del table")
+    #rank.hour.on(2, 23)
+    # rank.minute.on(0)
 
 
 def add_match_jobs(cron, script_dir, match_date, match_id, tzone):
@@ -436,7 +436,7 @@ def create_cron_entries(tzone, dry_run=False):
     self_job.hour.on(2)
     self_job.minute.on(5)
 
-    # add_baseline_jobs(cron, script_dir)
+    add_baseline_jobs(cron, script_dir)
 
     no_bet = "n/a"
     # if match_date and match_date <= uts_now + threshold and uts_now < match_date:
