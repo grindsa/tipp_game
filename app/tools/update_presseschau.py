@@ -7,9 +7,12 @@ from __future__ import absolute_import
 import os
 import sys
 import logging
+import calendar
+import time
 import curl_cffi
 from urllib.parse import urlparse
 import ssl
+from email.utils import parsedate_tz, mktime_tz
 import requests
 from bs4 import BeautifulSoup
 import feedparser
@@ -53,6 +56,16 @@ GOOGLE_EXCLUDELIST = [
     ).split(",")
     if entry.strip()
 ]
+
+
+def _get_google_max_age_hours(default_hours=48):
+    """Return configured max Google entry age in hours."""
+    try:
+        return max(0, int(os.environ.get("GOOGLE_MAX_AGE_HOURS", str(default_hours))))
+    except (TypeError, ValueError):
+        return default_hours
+
+GOOGLE_MAX_AGE_HOURS = _get_google_max_age_hours()
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Linux; Android 4.0.4; Galaxy Nexus Build/IMM76B) AppleWebKit/535.19 (KHTML, like Gecko) Chrome/18.0.1025.133 Mobile Safari/535.19",
@@ -235,6 +248,34 @@ def _process_google_entry(
     _append_error(error_links, decoded_link, None, error_reason)
 
 
+def _google_entry_timestamp(entry):
+    """Return UTC timestamp from a Google feed entry, else None."""
+    published_parsed = getattr(entry, "published_parsed", None)
+    if published_parsed:
+        return calendar.timegm(published_parsed)
+
+    published = getattr(entry, "published", None)
+    if not published:
+        return None
+
+    parsed = parsedate_tz(published)
+    if not parsed:
+        return None
+
+    return mktime_tz(parsed)
+
+
+def _is_google_entry_too_old(entry, max_age_hours=GOOGLE_MAX_AGE_HOURS):
+    """Return True when a Google feed entry is older than max_age_hours."""
+    published_timestamp = _google_entry_timestamp(entry)
+    if published_timestamp is None:
+        return True
+
+    max_age_seconds = max_age_hours * 3600
+    current_timestamp = time.time()
+    return (current_timestamp - published_timestamp) > max_age_seconds
+
+
 def _parse_google_feed():
     """Fetch and parse the Google RSS feed."""
     if hasattr(ssl, "_create_unverified_context"):
@@ -245,12 +286,10 @@ def _parse_google_feed():
     )
 
 
-def _iter_google_feed_links(google_feed):
-    """Yield link values from Google feed entries."""
+def _iter_google_feed_entries(google_feed):
+    """Yield Google feed entries."""
     for entry in getattr(google_feed, "entries", []):
-        google_url = getattr(entry, "link", None)
-        if google_url:
-            yield google_url
+        yield entry
 
 
 def parse_google_page(feedlink_list, logger):
@@ -260,7 +299,19 @@ def parse_google_page(feedlink_list, logger):
     google_feed = _parse_google_feed()
     google_link_list = []
     google_error_list = []
-    for google_url in _iter_google_feed_links(google_feed):
+    for entry in _iter_google_feed_entries(google_feed):
+        if _is_google_entry_too_old(entry):
+            logger.info(
+                "google_entry_skipped_old published=%s max_age_hours=%s",
+                getattr(entry, "published", None),
+                GOOGLE_MAX_AGE_HOURS,
+            )
+            continue
+
+        google_url = getattr(entry, "link", None)
+        if not google_url:
+            continue
+
         _process_google_entry(
             feedlink_list,
             google_url,

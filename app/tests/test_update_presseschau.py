@@ -1,4 +1,5 @@
 import logging
+import time
 from types import SimpleNamespace
 from unittest import mock
 
@@ -146,7 +147,14 @@ class UpdatePresseschauTests(SimpleTestCase):
     @mock.patch('tools.update_presseschau.feedparser.parse')
     @mock.patch('tools.update_presseschau.check_url')
     def test_parse_google_page_blacklisted_decoded_domain_goes_to_error_list(self, check_url, feed_parse, decode):
-        feed_parse.return_value = SimpleNamespace(entries=[SimpleNamespace(link='https://news.google.com/a')])
+        feed_parse.return_value = SimpleNamespace(
+            entries=[
+                SimpleNamespace(
+                    link='https://news.google.com/a',
+                    published_parsed=time.gmtime(time.time() - 3600),
+                )
+            ]
+        )
         decode.return_value = {'status': True, 'decoded_url': 'https://www.penny-del.org/statistik/news'}
         check_url.return_value = (True, 'https://news.google.com/a', None)
 
@@ -155,20 +163,27 @@ class UpdatePresseschauTests(SimpleTestCase):
         self.assertEqual(new_links, [])
         self.assertEqual(len(error_links), 1)
         self.assertEqual(error_links[0]['candidate_url'], 'https://www.penny-del.org/statistik/news')
-        self.assertEqual(error_links[0]['reason'], 'google_blacklisted')
+        self.assertEqual(error_links[0]['reason'], 'google_excluded')
         self.assertEqual(check_url.call_count, 1)
 
-    def test_is_blacklisted_domain_matches_domain_and_path(self):
+    def test_is_excluded_domain_matches_domain_and_path(self):
         blacklist = ['www.penny-del.org/statistik/', 'spiegel.de']
-        self.assertTrue(up._is_blacklisted_domain('https://www.penny-del.org/statistik/news', blacklist))
-        self.assertTrue(up._is_blacklisted_domain('https://www.spiegel.de/sport', blacklist))
-        self.assertFalse(up._is_blacklisted_domain('https://www.penny-del.org/news', blacklist))
+        self.assertTrue(up._is_excluded_domain('https://www.penny-del.org/statistik/news', blacklist))
+        self.assertTrue(up._is_excluded_domain('https://www.spiegel.de/sport', blacklist))
+        self.assertFalse(up._is_excluded_domain('https://www.penny-del.org/news', blacklist))
 
     @mock.patch('tools.update_presseschau.gnewsdecoder')
     @mock.patch('tools.update_presseschau.feedparser.parse')
     @mock.patch('tools.update_presseschau.check_url')
     def test_parse_google_page_non_blacklisted_decoded_domain_goes_to_new_list(self, check_url, feed_parse, decode):
-        feed_parse.return_value = SimpleNamespace(entries=[SimpleNamespace(link='https://news.google.com/b')])
+        feed_parse.return_value = SimpleNamespace(
+            entries=[
+                SimpleNamespace(
+                    link='https://news.google.com/b',
+                    published_parsed=time.gmtime(time.time() - 3600),
+                )
+            ]
+        )
         decode.return_value = {'status': True, 'decoded_url': 'https://tagesspiegel.de/sport'}
         check_url.side_effect = [
             (True, 'https://news.google.com/b', None),
@@ -179,6 +194,47 @@ class UpdatePresseschauTests(SimpleTestCase):
 
         self.assertEqual(new_links, ['https://tagesspiegel.de/sport'])
         self.assertEqual(error_links, [])
+
+    @mock.patch('tools.update_presseschau.time.time', return_value=1_000_000)
+    def test_google_entry_too_old_true_for_entries_older_than_48h(self, _time_now):
+        entry = SimpleNamespace(published_parsed=time.gmtime(1_000_000 - (49 * 3600)))
+        self.assertTrue(up._is_google_entry_too_old(entry, max_age_hours=48))
+
+    @mock.patch('tools.update_presseschau.time.time', return_value=1_000_000)
+    def test_google_entry_too_old_false_for_recent_entries(self, _time_now):
+        entry = SimpleNamespace(published_parsed=time.gmtime(1_000_000 - (2 * 3600)))
+        self.assertFalse(up._is_google_entry_too_old(entry, max_age_hours=48))
+
+    def test_google_entry_too_old_true_when_publish_time_missing(self):
+        entry = SimpleNamespace()
+        self.assertTrue(up._is_google_entry_too_old(entry, max_age_hours=48))
+
+    @mock.patch('tools.update_presseschau._process_google_entry')
+    @mock.patch('tools.update_presseschau._is_google_entry_too_old')
+    @mock.patch('tools.update_presseschau._parse_google_feed')
+    def test_parse_google_page_skips_old_entries_before_processing(
+        self,
+        parse_google_feed,
+        is_google_entry_too_old,
+        process_google_entry,
+    ):
+        old_entry = SimpleNamespace(link='https://news.google.com/old', published='old')
+        new_entry = SimpleNamespace(link='https://news.google.com/new', published='new')
+        parse_google_feed.return_value = SimpleNamespace(entries=[old_entry, new_entry])
+        is_google_entry_too_old.side_effect = [True, False]
+
+        new_links, error_links = up.parse_google_page([], self.logger)
+
+        self.assertEqual(new_links, [])
+        self.assertEqual(error_links, [])
+        process_google_entry.assert_called_once_with(
+            [],
+            'https://news.google.com/new',
+            up.GOOGLE_EXCLUDELIST,
+            self.logger,
+            new_links,
+            error_links,
+        )
 
     @mock.patch('tools.update_presseschau.simple_send')
     def test_send_whatsapp_summary_invalid_port_skips_send(self, simple_send):
