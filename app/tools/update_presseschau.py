@@ -46,10 +46,10 @@ GOOGLE_RSS_USER_AGENT = os.environ.get(
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36",
 )
-GOOGLE_BLACKLIST = [
+GOOGLE_EXCLUDELIST = [
     entry.strip()
     for entry in os.environ.get(
-        "GOOGLE_BLACKLIST", "www.penny-del.org/statistik/"
+        "GOOGLE_EXCLUDELIST", "www.penny-del.org/statistik/"
     ).split(",")
     if entry.strip()
 ]
@@ -166,10 +166,10 @@ def _parse_host_and_path(value):
     return host, path
 
 
-def _is_blacklisted_domain(url, blacklist):
-    """Match URL against blacklist entries with optional path prefixes."""
+def _is_excluded_domain(url, excludelist):
+    """Match URL against excludelist entries with optional path prefixes."""
     domain, path = _parse_host_and_path(url)
-    for item in blacklist:
+    for item in excludelist:
         if not item:
             continue
 
@@ -204,7 +204,7 @@ def _decode_google_link(google_url, logger):
 
 
 def _process_google_entry(
-    feedlink_list, google_url, blacklist, logger, new_links, error_links
+    feedlink_list, google_url, excludelist, logger, new_links, error_links
 ):
     """Process one Google feed entry and update result lists."""
     is_ok, _, error_reason = check_url(
@@ -219,9 +219,9 @@ def _process_google_entry(
         _append_error(error_links, google_url, None, "google_decode_failed")
         return
 
-    if _is_blacklisted_domain(decoded_link, blacklist):
-        logger.info("google_link_blacklisted url=%s", decoded_link)
-        _append_error(error_links, decoded_link, decoded_link, "google_blacklisted")
+    if _is_excluded_domain(decoded_link, excludelist):
+        logger.info("google_link_excluded url=%s", decoded_link)
+        _append_error(error_links, decoded_link, decoded_link, "google_excluded")
         return
 
     is_ok, _, error_reason = check_url(feedlink_list, decoded_link, logger)
@@ -264,7 +264,7 @@ def parse_google_page(feedlink_list, logger):
         _process_google_entry(
             feedlink_list,
             google_url,
-            GOOGLE_BLACKLIST,
+            GOOGLE_EXCLUDELIST,
             logger,
             google_link_list,
             google_error_list,
