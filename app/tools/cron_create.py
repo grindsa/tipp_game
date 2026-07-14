@@ -420,7 +420,7 @@ def create_cron_entries(tzone, dry_run=False):
     match_id, match_date, _tvbc = get_next_match(uts_now, season_id)
     _l_match_id, l_match_date, _l_match_day = get_last_match(uts_now, season_id)
 
-    cron = CronTab(tabfile=filename, user=False)
+    cron = CronTab(tabfile=filename)
     cron.remove_all()
 
     self_job = create_job(
