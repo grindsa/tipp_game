@@ -57,11 +57,6 @@ def build_command(script_path, extra_args=""):
     return "{0}{1}".format(script_path, suffix)
 
 
-def resolve_cron_user():
-    """Resolve target user for generated cron entries."""
-    return os.environ.get("CRON_RUN_AS_USER", "joern")
-
-
 def resolve_dry_run(cli_args):
     """Resolve dry-run mode from CLI or environment."""
     if "--dry-run" in cli_args:
@@ -133,7 +128,7 @@ def write_cron_file(cron, filename, dry_run=False, backup_enabled=True):
 
 def create_job(cron, command, comment):
     """Create a new cron job and return it."""
-    return cron.new(command=command, comment=comment, user=resolve_cron_user())
+    return cron.new(command=command, comment=comment)
 
 
 def create_script_job(cron, script_dir, script_name, comment, extra_args=""):
