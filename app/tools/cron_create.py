@@ -211,14 +211,14 @@ def add_baseline_jobs(cron, script_dir):
     psup.hour.during(6, 22).every(3)
     psup.minute.on(30)
 
-    #trchk = create_script_job(
-    #    cron, script_dir, "chk_presseschau.py", "scan presseschau for updates"
-    #)
-    #if datetime.today().isoweekday() > 5:
-    #    trchk.hour.on(9, 21)
-    #else:
-    #    trchk.hour.on(7, 19)
-    #trchk.minute.on(0)
+    psntf = create_script_job(
+        cron, script_dir, "notify_presseschau.py", "scan presseschau for updates"
+    )
+    if datetime.today().isoweekday() > 5:
+        psntf.hour.on(9, 21)
+    else:
+        psntf.hour.on(7, 19)
+    psntf.minute.on(0)
 
     #threema = create_script_job(
     #    cron, script_dir, "threema_chk.py", "check threema credits"
