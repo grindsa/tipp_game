@@ -220,11 +220,11 @@ def add_baseline_jobs(cron, script_dir):
         psntf.hour.on(7, 19)
     psntf.minute.on(0)
 
-    #threema = create_script_job(
-    #    cron, script_dir, "threema_chk.py", "check threema credits"
-    #)
-    #threema.hour.on(23)
-    #threema.minute.on(1)
+    threema = create_script_job(
+        cron, script_dir, "threema_chk.py", "check threema credits"
+    )
+    threema.hour.on(23)
+    threema.minute.on(1)
 
     #trtchk = create_script_job(
     #    cron, script_dir, "get_training_times.py", "Check for new training times"
