@@ -100,9 +100,16 @@ def acquire_script_lock(lock_file, blocking=False):
         raise
 
 
-def write_cron_file(cron, filename, dry_run=False, backup_enabled=True):
+def current_timestamp():
+    """Return current local timestamp for cron metadata."""
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def write_cron_file(
+    cron, filename, dry_run=False, backup_enabled=True, created_at=None
+):
     """Write cron file atomically, optionally creating a backup."""
-    created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    created_at = created_at or current_timestamp()
     cron_text = "# created: {0}\n{1}".format(created_at, str(cron))
 
     if dry_run:
@@ -424,10 +431,12 @@ def create_cron_entries(tzone, dry_run=False):
     cron = CronTab(tabfile=filename)
     cron.remove_all()
 
+    created_at = current_timestamp()
+
     self_job = create_job(
         cron,
         build_command(me_script),
-        "daily check if we need to create contab entries",
+        "daily check if we need to create contab entries ({0})".format(created_at),
     )
     self_job.hour.on(2)
     self_job.minute.on(5)
@@ -443,7 +452,11 @@ def create_cron_entries(tzone, dry_run=False):
 
     # add_recent_match_jobs(cron, script_dir, uts_now, threshold, l_match_date, match_id)
     write_cron_file(
-        cron, filename, dry_run=dry_run, backup_enabled=resolve_backup_enabled()
+        cron,
+        filename,
+        dry_run=dry_run,
+        backup_enabled=resolve_backup_enabled(),
+        created_at=created_at,
     )
 
 
