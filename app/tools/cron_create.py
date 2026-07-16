@@ -102,7 +102,8 @@ def acquire_script_lock(lock_file, blocking=False):
 
 def write_cron_file(cron, filename, dry_run=False, backup_enabled=True):
     """Write cron file atomically, optionally creating a backup."""
-    cron_text = str(cron)
+    created_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    cron_text = "# created: {0}\n{1}".format(created_at, str(cron))
 
     if dry_run:
         print("# dry-run: cron output for {0}".format(filename))
