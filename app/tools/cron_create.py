@@ -36,6 +36,10 @@ SCRIPT_TIPP_REMINDER = "tipp_reminder.py"
 SCRIPT_LOAD_VIDEO_STREAMS = "load_video_streams.py"
 COMMENT_GRAB_VIDEO = "grab video"
 
+EXIT_SUCCESS = 0
+EXIT_RUNTIME_ERROR = 1
+EXIT_LOCK_ACTIVE = 2
+
 
 def resolve_cron_filename():
     """Resolve cron output file from environment settings."""
@@ -447,8 +451,11 @@ def create_cron_entries(tzone, dry_run=False):
     # if match_date and match_date <= uts_now + threshold and uts_now < match_date:
     #    no_bet = add_match_jobs(cron, script_dir, match_date, match_id, tzone)
 
-    # only for poc - later please combine with the codeblock above
-    notify_cron_update(no_bet)
+    # Keep cron generation independent from optional notification delivery.
+    try:
+        notify_cron_update(no_bet)
+    except Exception as exc:
+        print("notify_cron_update failed: {0}".format(exc))
 
     # add_recent_match_jobs(cron, script_dir, uts_now, threshold, l_match_date, match_id)
     write_cron_file(
@@ -476,15 +483,18 @@ def run(cli_args):
         lock_handle = acquire_script_lock(lock_file, blocking=lock_blocking)
     except BlockingIOError:
         print("lock active, skipping run: {0}".format(lock_file))
-        return 0
+        return EXIT_LOCK_ACTIVE
 
     try:
         create_cron_entries(TIMEZONE, dry_run=dry_run)
+    except Exception as exc:
+        print("cron_create failed: {0}".format(exc))
+        return EXIT_RUNTIME_ERROR
     finally:
         if lock_handle:
             lock_handle.close()
 
-    return 0
+    return EXIT_SUCCESS
 
 
 if __name__ == "__main__":
