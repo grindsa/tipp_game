@@ -463,8 +463,14 @@ def create_cron_entries(tzone, dry_run=False):
 def run(cli_args):
     """Run script with lock protection."""
     dry_run = resolve_dry_run(cli_args)
+    target_file = resolve_cron_filename()
     lock_file = resolve_lock_file()
     lock_blocking = resolve_lock_blocking()
+    print(
+        "cron_create start: target={0} dry_run={1} lock_file={2} lock_blocking={3}".format(
+            target_file, dry_run, lock_file, lock_blocking
+        )
+    )
     lock_handle = None
     try:
         lock_handle = acquire_script_lock(lock_file, blocking=lock_blocking)
