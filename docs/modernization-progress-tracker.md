@@ -571,13 +571,13 @@ Date:
 Milestone:
 Status:
 Completed:
-- 
+-
 
 In progress:
-- 
+-
 
 Blocked/decisions needed:
-- 
+-
 
 Verification evidence:
 - Tests:
@@ -585,8 +585,8 @@ Verification evidence:
 - Screenshots:
 
 Risks/changes:
-- 
+-
 
 Next actions:
-- 
+-
 ```
