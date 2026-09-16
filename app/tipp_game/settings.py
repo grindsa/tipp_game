@@ -42,6 +42,27 @@ def env_bool(name, default=False):
     return os.environ.get(name, str(default)).lower() in ['true', '1', 'yes', 'on']
 
 
+def parse_name_email_pairs(raw_value):
+    """Parse ADMINS-style env values into Django 2-tuples.
+
+    Supported forms:
+    - Name,email@example.com
+    - Name,email@example.com;Other,other@example.com
+    - email@example.com
+    """
+    pairs = []
+    for chunk in (raw_value or '').replace('\n', ';').split(';'):
+        chunk = chunk.strip()
+        if not chunk:
+            continue
+        parts = [part.strip() for part in chunk.split(',', 1)]
+        if len(parts) == 2 and parts[0] and parts[1]:
+            pairs.append((parts[0], parts[1]))
+        elif len(parts) == 1 and '@' in parts[0]:
+            pairs.append((parts[0], parts[0]))
+    return pairs
+
+
 DJANGO_ENV = os.environ.get('DJANGO_ENV', 'production').lower()
 IS_PRODUCTION = DJANGO_ENV in ['prod', 'production']
 
@@ -285,8 +306,8 @@ EMAIL_HOST = os.environ.get('EMAIL_HOST', 'EMAIL_HOST')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', 'EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
-ADMINS = os.environ.get('ADMINS', 'ADMINS,ADMINS@localhost').split(',')
-MAILER_LIST = os.environ.get('MAILER_LIST', 'MAILER_LIST,MAILER_LIST@localhost').split(',')
+ADMINS = parse_name_email_pairs(os.environ.get('ADMINS', 'ADMINS,ADMINS@localhost'))
+MAILER_LIST = parse_name_email_pairs(os.environ.get('MAILER_LIST', 'MAILER_LIST,MAILER_LIST@localhost'))
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 SERVER_EMAIL = EMAIL_HOST_USER
 
