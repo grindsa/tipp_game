@@ -34,7 +34,13 @@ TIMEZONE = timezone("Europe/Berlin")
 
 SCRIPT_TIPP_REMINDER = "tipp_reminder.py"
 SCRIPT_LOAD_VIDEO_STREAMS = "load_video_streams.py"
+SCRIPT_MATCH_IMPORT = "match_import.py"
+SCRIPT_TIPP_BOT = "tipp_bot.py"
+MATCH_IMPORT_ARGS = "--year 2026 --league-id 1"
 COMMENT_GRAB_VIDEO = "grab video"
+COMMENT_MATCH_IMPORT = "import upcoming del matches"
+COMMENT_JOSI_BOT = "Josi-Bot"
+COMMENT_HENDRIK_BOT = "Hendrik-Bot"
 
 EXIT_SUCCESS = 0
 EXIT_RUNTIME_ERROR = 1
@@ -238,6 +244,16 @@ def add_baseline_jobs(cron, script_dir):
     threema.hour.on(23)
     threema.minute.on(1)
 
+    mimport = create_script_job(
+        cron,
+        script_dir,
+        SCRIPT_MATCH_IMPORT,
+        COMMENT_MATCH_IMPORT,
+        MATCH_IMPORT_ARGS,
+    )
+    mimport.hour.on(5)
+    mimport.minute.on(15)
+
     #trtchk = create_script_job(
     #    cron, script_dir, "get_training_times.py", "Check for new training times"
     #)
@@ -273,12 +289,20 @@ def add_match_jobs(cron, script_dir, match_date, match_id, tzone):
         rem1.minute.on(minute)
 
         hour, minute = timestamp_to_hour_minute(match_date - 10740, tzone)
-        jbot = create_script_job(cron, script_dir, "josi_bot.py", "Josi-Bot")
+        jbot = create_script_job(
+            cron, script_dir, SCRIPT_TIPP_BOT, COMMENT_JOSI_BOT, "--profile josi"
+        )
         jbot.hour.on(hour)
         jbot.minute.on(minute)
 
         hour, minute = timestamp_to_hour_minute(match_date - 10740, tzone)
-        hbot = create_script_job(cron, script_dir, "hendrik_bot.py", "Hendrik-Bot")
+        hbot = create_script_job(
+            cron,
+            script_dir,
+            SCRIPT_TIPP_BOT,
+            COMMENT_HENDRIK_BOT,
+            "--profile hendrik",
+        )
         hbot.hour.on(hour)
         hbot.minute.on(minute)
 

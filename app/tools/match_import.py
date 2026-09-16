@@ -23,9 +23,9 @@ from game.myfunctions import print_debug
 
 INVALID_START_DATE = "0000-00-00 00:00:00"
 START_DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
-DEFAULT_LEAGUE_ID = 3
+DEFAULT_LEAGUE_ID = 1
 DEFAULT_TEAM_ID = 3
-DEFAULT_SEASON_YEAR = 2025
+DEFAULT_SEASON_YEAR = 2026
 DEFAULT_START_MATCHDAY = 52
 # API timestamps are parsed as UTC; subtract 3h, then store with +1h.
 API_TO_UTC_OFFSET_SECONDS = 10800

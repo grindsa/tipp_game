@@ -52,6 +52,66 @@ class CronCreateTests(SimpleTestCase):
             with open(out_file + '.bak', 'r') as fha:
                 self.assertEqual(fha.read(), 'old-content')
 
+    def test_add_baseline_jobs_includes_match_import_with_season_args(self):
+        jobs = []
+
+        class FakeJob(object):
+            def __init__(self, command, comment):
+                self.command = command
+                self.comment = comment
+                self.hour = mock.Mock()
+                self.minute = mock.Mock()
+
+        def fake_create_job(_cron, command, comment):
+            job = FakeJob(command, comment)
+            jobs.append(job)
+            return job
+
+        with mock.patch.dict(os.environ, {"CRON_EXECUTION_PREFIX": ""}, clear=False):
+            with mock.patch.object(cron_create, "create_job", side_effect=fake_create_job):
+                cron_create.add_baseline_jobs(object(), "/app/tools")
+
+        match_jobs = [job for job in jobs if job.comment == cron_create.COMMENT_MATCH_IMPORT]
+        self.assertEqual(len(match_jobs), 1)
+        self.assertEqual(
+            match_jobs[0].command,
+            "/app/tools/match_import.py --year 2026 --league-id 1",
+        )
+        match_jobs[0].hour.on.assert_called_once_with(5)
+        match_jobs[0].minute.on.assert_called_once_with(15)
+
+    def test_add_match_jobs_schedules_shared_tipp_bot_profiles(self):
+        jobs = []
+
+        class FakeJob(object):
+            def __init__(self, command, comment):
+                self.command = command
+                self.comment = comment
+                self.hour = mock.Mock()
+                self.minute = mock.Mock()
+
+        def fake_create_job(_cron, command, comment):
+            job = FakeJob(command, comment)
+            jobs.append(job)
+            return job
+
+        match_qs = mock.Mock()
+        match_qs.filter.return_value = match_qs
+        match_qs.order_by.return_value = match_qs
+        match_qs.values_list.return_value = [False]
+
+        with mock.patch.dict(os.environ, {"CRON_EXECUTION_PREFIX": ""}, clear=False):
+            with mock.patch.object(cron_create.Match, "objects", match_qs):
+                with mock.patch.object(cron_create, "create_job", side_effect=fake_create_job):
+                    cron_create.add_match_jobs(object(), "/app/tools", 1700000000, 9, cron_create.TIMEZONE)
+
+        josi = [job for job in jobs if job.comment == cron_create.COMMENT_JOSI_BOT]
+        hendrik = [job for job in jobs if job.comment == cron_create.COMMENT_HENDRIK_BOT]
+        self.assertEqual(len(josi), 1)
+        self.assertEqual(len(hendrik), 1)
+        self.assertEqual(josi[0].command, "/app/tools/tipp_bot.py --profile josi")
+        self.assertEqual(hendrik[0].command, "/app/tools/tipp_bot.py --profile hendrik")
+
     def test_acquire_script_lock_non_blocking(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             lock_path = os.path.join(tmp_dir, 'cron.lock')
