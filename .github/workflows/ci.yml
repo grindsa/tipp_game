@@ -8,6 +8,30 @@ on:
 jobs:
   django-check:
     runs-on: ubuntu-latest
+    env:
+      DJANGO_ENV: development
+      DJANGO_SECRET_KEY: ci-secret-key
+      DJANGO_DEBUG: "true"
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+      DB_NAME: ci
+      DB_USER: ci
+      DB_PASSWORD: ci
+      DB_HOST: localhost
+      DB_PORT: "3306"
+      WB_NAME: ci
+      WB_USER: ci
+      WB_PASSWORD: ci
+      EMAIL_HOST: localhost
+      EMAIL_PORT: "25"
+      EMAIL_HOST_USER: ci@example.com
+      EMAIL_HOST_PASSWORD: ci
+      WA_SRV: localhost
+      WA_PORT: "9009"
+      WA_ADMIN_NUMBER: "000000"
+      TR_ID: "*"
+      TR_SECRET: ci
+      TR_SK: private:ci
+      OTP_TOTP_ISSUER: tipp_game
 
     steps:
       - name: Checkout
@@ -33,28 +57,7 @@ jobs:
           pip install -r app/requirements.txt
 
       - name: Django system check
-        env:
-          DJANGO_ENV: development
-          DJANGO_SECRET_KEY: ci-secret-key
-          DJANGO_DEBUG: "true"
-          DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
-          DB_NAME: ci
-          DB_USER: ci
-          DB_PASSWORD: ci
-          DB_HOST: localhost
-          DB_PORT: "3306"
-          WB_NAME: ci
-          WB_USER: ci
-          WB_PASSWORD: ci
-          EMAIL_HOST: localhost
-          EMAIL_PORT: "25"
-          EMAIL_HOST_USER: ci@example.com
-          EMAIL_HOST_PASSWORD: ci
-          WA_SRV: localhost
-          WA_PORT: "9009"
-          WA_ADMIN_NUMBER: "000000"
-          TR_ID: "*"
-          TR_SECRET: ci
-          TR_SK: private:ci
-          OTP_TOTP_ISSUER: tipp_game
         run: python app/manage.py check
+
+      - name: Django migration files are up to date
+        run: python app/manage.py makemigrations --check --dry-run

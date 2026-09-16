@@ -189,4 +189,3 @@ cython_debug/
 *.bup
 app/static/admin/
 *.lcov
-app/*/migrations/*

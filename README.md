@@ -70,6 +70,25 @@ App is exposed on port 8000.
 - After deploy or upgrade, verify static assets if admin styling looks broken:
    docker compose logs -f web
 
+## Database migrations
+
+Migration files under `app/*/migrations/` are part of the product and are copied into the image.
+
+After building a new image, apply them once from the `jobs` service before recreating `web`:
+
+```bash
+docker compose --project-directory /srv/stacks/tipp_game run --rm --no-deps jobs python manage.py migrate --noinput
+docker compose --project-directory /srv/stacks/tipp_game up -d --force-recreate web
+```
+
+The live database already has tables but no `django_migrations` history for these apps. On the **first** deploy that includes these files, fake the initial migrations instead of creating tables:
+
+```bash
+docker compose --project-directory /srv/stacks/tipp_game run --rm --no-deps jobs python manage.py migrate --fake-initial
+```
+
+Later deploys use plain `migrate`. Do not run `makemigrations` inside the container at startup. Create new migration files in the repo next to the model change.
+
 ## Backup
 
 Backup tooling is provided via host scripts:
