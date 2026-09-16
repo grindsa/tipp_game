@@ -1,5 +1,6 @@
 import calendar
 import io
+import os
 from contextlib import redirect_stdout
 from datetime import datetime, timezone
 from types import SimpleNamespace
@@ -316,6 +317,16 @@ class MatchImportTests(SimpleTestCase):
     def test_default_config_path_uses_script_directory(self):
         path = mi.default_config_path("/tmp/tools/match_import.py")
         self.assertEqual(path, "/tmp/tools/delapphelper.cfg")
+
+    @mock.patch.dict(os.environ, {"DELAPPHELPER_CFG": "/secret/delapphelper.cfg"}, clear=False)
+    def test_default_config_path_prefers_env(self):
+        self.assertEqual(mi.default_config_path("/tmp/tools/match_import.py"), "/secret/delapphelper.cfg")
+
+    def test_create_del_app_helper_requires_config_file(self):
+        with mock.patch.dict("sys.modules", {"delapphelper": mock.Mock(DelAppHelper=mock.Mock())}):
+            with self.assertRaises(RuntimeError) as raised:
+                mi.create_del_app_helper(False, cfg_file="/missing/delapphelper.cfg")
+        self.assertIn("delapphelper config not found", str(raised.exception))
 
     def test_uts_now_uses_utc_timestamp(self):
         fixed = datetime(2023, 11, 14, 22, 13, 20, tzinfo=timezone.utc)

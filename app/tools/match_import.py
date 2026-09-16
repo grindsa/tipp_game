@@ -211,16 +211,31 @@ def persist_matches(updates, match_model=None):
 
 
 def default_config_path(script_file=None):
-    """Return the default DelAppHelper config path next to this script."""
+    """Return the DelAppHelper config path from env or next to this script."""
+    env_path = os.environ.get("DELAPPHELPER_CFG", "").strip()
+    if env_path:
+        return env_path
     script_file = script_file or __file__
     return os.path.join(os.path.dirname(script_file), CFG_FILENAME)
 
 
 def create_del_app_helper(debug, cfg_file=None):
     """Create a DelAppHelper context manager."""
-    from delapphelper import DelAppHelper
+    try:
+        from delapphelper import DelAppHelper
+    except ImportError as exc:
+        raise RuntimeError(
+            "delapphelper is not installed; add delapp-helper to requirements and rebuild the image"
+        ) from exc
 
-    return DelAppHelper(debug=debug, cfg_file=cfg_file or default_config_path())
+    cfg_file = cfg_file or default_config_path()
+    if not os.path.isfile(cfg_file):
+        raise RuntimeError(
+            "delapphelper config not found: {0}. Mount the file or set DELAPPHELPER_CFG".format(
+                cfg_file
+            )
+        )
+    return DelAppHelper(debug=debug, cfg_file=cfg_file)
 
 
 def load_seasons(season_model=None):
