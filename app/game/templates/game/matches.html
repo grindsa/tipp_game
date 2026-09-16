@@ -139,13 +139,13 @@ Tippspiel|Spiele
     {% if match.winloss == 'loss' %}
     <td class="bgerror center">
 	{% if match.result %}
-	    <a href="/game/gamestats?match_id={{match.id}}">{{match.result}}</a>
+	    {{match.result}}
 	{% endif %}
 	</td>	
 	{% else %}
     <td class="center">
 	{% if match.result %}
-	    <a href="/game/gamestats?match_id={{match.id}}">{{match.result}}</a>
+	    {{match.result}}
 	{% endif %}
 	</td>
 	{% endif %}
@@ -184,8 +184,7 @@ Tippspiel|Spiele
 	    <td><a href="{{match.url}}"><i class="fa fa-volume-up fa-lg"></i></a></td>	   
        {% else %}
 	    <td>&nbsp;</td> 
-       {% endif %}	--> 
-	    <td><a href="/game/gamestats?match_id={{match.id}}"><i class="fa fa-bar-chart fa-lg"></i></a></td>	       
+       {% endif %}	--> 	       
    {% endif %}		
 </tr>
 {% endif %}	

@@ -163,7 +163,6 @@
         {% if 1|chk_live_link == 1 %}
         <a href="/" class="w3-bar-item w3-button w3-padding-24 ehc-hover-red"><i class="fa fa-home fa-lg w3-xlarge"></i></a>
         <a href="/game/live" class="w3-bar-item w3-button w3-padding-24 ehc-hover-red"><span class="w3-tag w3-green w3-round">Live</span></a>
-        <a href="/game/gamestats" class="w3-bar-item w3-button w3-padding-24 ehc-hover-red"><i class="fa fa-bar-chart fa-lg w3-large"></i></a>
         {% else %}
         <a href="https://www.eisbaeren.de" class="w3-bar-item w3-button w3-padding-24"><img class="nav-img fa-lg" src="/static/img/logo.png" alt="EBB Logo"></a>
         <a href="/" class="w3-bar-item w3-button w3-padding-24 ehc-hover-red"><i class="fa fa-home fa-lg w3-xlarge"></i></a>
@@ -177,7 +176,7 @@
         <a href="/article/" class="w3-bar-item w3-button w3-padding-24 ehc-hover-red">Presseschau</a>
     {% else %}
         {% if 1|chk_live_link == 1 %}
-        <a href="/game/gamestats" class="w3-bar-item w3-button w3-padding-24 ehc-hover-red"><span class="w3-tag w3-green w3-round">Live</span></a>
+        <a href="/game/live" class="w3-bar-item w3-button w3-padding-24 ehc-hover-red"><span class="w3-tag w3-green w3-round">Live</span></a>
         {% endif %}
    {% endif %}
 {% else %}
@@ -187,7 +186,6 @@
         <a href="/game/tip" class="w3-bar-item w3-button w3-padding-24 ehc-hover-red"><i class="fa fa-plus-circle fa-lg w3-xlarge"></i></a>
         {% if 1|chk_live_link == 1 %}
         <a href="/game/live" class="w3-bar-item w3-button w3-padding-24 ehc-hover-red"><span class="w3-tag w3-green w3-round">Live</span></a>
-        <a href="/game/gamestats" class="w3-bar-item w3-button w3-padding-24 ehc-hover-red"><i class="fa fa-bar-chart fa-lg w3-large"></i></a>
         {% else %}
             {% if request.get_full_path == '/article/' %}
         <a href="/article?twitter=1" class="w3-bar-item w3-button w3-padding-24 ehc-hover-red"><i class="fa fa-twitter fa-lg w3-xlarge"></i></a>

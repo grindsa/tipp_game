@@ -51,16 +51,6 @@
 </table>
 
 <div class="w3-margin-top">
-{% if request.path == '/game/gamestats' %}
-    <a href="/game/gamestats?match_id={{match_id}}#divnav" class="w3-button ehc-red-2 ehc-hover-red-2 w3-tiny ">Überblick</a>
-{% else %}
-    <a href="/game/gamestats?match_id={{match_id}}#divnav" class="w3-button ehc-blue-1 ehc-hover-red-2 w3-tiny">Überblick</a>
-{% endif %}
-{% if request.path == '/game/nerdstats' %}
-    <a href="/game/nerdstats?match_id={{match_id}}#divnav" class="w3-button ehc-red-2 ehc-hover-red-2 w3-tiny ">Details</a>
-{% else %}
-    <a href="/game/nerdstats?match_id={{match_id}}#divnav" class="w3-button ehc-blue-1 ehc-hover-red-2 w3-tiny">Details</a>
-{% endif %}
 {% if request.path == '/game/gameticker' %}
     <a href="/game/gameticker?match_id={{match_id}}#divnav" class="w3-button ehc-red-2 ehc-hover-red-2 w3-tiny ">Live-Ticker</a>
 {% else %}

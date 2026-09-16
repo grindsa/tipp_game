@@ -13,7 +13,7 @@ from django.conf import settings
 from article.models import Entries, Twitter, Ticker
 from article.myfunctions import get_month_name, get_next_previous_month_strings, strip_tags, get_month_string, get_week_dates, get_date_range, get_wordcloud_data, get_word_chart_data, get_twittercloud_data, create_cw_chart, create_source_chart
 from game.models import Lineup, Match
-from game.myfunctions import get_u_data, get_sleep_counter, shorten_lineup, get_last_match, prep_gamestats
+from game.myfunctions import get_u_data, get_sleep_counter, shorten_lineup, get_last_match
 
 # reload(sys)
 # sys.setdefaultencoding('utf8')
@@ -281,8 +281,6 @@ def ticker(request):
     except BaseException:
         lineup_list = []
 
-    # prepare gamestats
-    # (d_update, title, gamestat_dic) = prep_gamestats(match_id, uts, mobile_browser)
     d_update = 'not implemented'
     title = 'not implemented'
     gamestat_dic = []
