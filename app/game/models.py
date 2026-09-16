@@ -67,12 +67,7 @@ class Match(models.Model):
     delapp_game_id = models.IntegerField(default=0)
     scorebyperiod = models.CharField(max_length=50, null=True, default=0)
     gameresult = jsonfield.JSONField(default='["foo":"bar"]')
-    period_events = jsonfield.JSONField(default='["foo":"bar"]')
-    shots = jsonfield.JSONField(default='["foo":"bar"]')
-    top_scorers = jsonfield.JSONField(default='["foo":"bar"]')
     roster = jsonfield.JSONField(default='["foo":"bar"]')
-    shifts = jsonfield.JSONField(default='["foo":"bar"]')
-    playerstats = jsonfield.JSONField(default='["foo":"bar"]')
     del_date = models.IntegerField(default=0)
     playoff = models.BooleanField(default=False)
 
