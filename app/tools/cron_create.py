@@ -40,7 +40,9 @@ SCRIPT_MATCH_PUMPUP = "match_pumpup.py"
 SCRIPT_YOWSUP_DMN = "yowsup_dmn.py"
 SCRIPT_LIFE_SCORE = "life_score.py"
 SCRIPT_GET_LINEUP = "get_lineup.py"
+SCRIPT_GET_RANKING = "get_ranking.py"
 MATCH_IMPORT_ARGS = "--year 2026 --league-id 1"
+GET_RANKING_ARGS = "--year 2026 --table-id 37"
 COMMENT_GRAB_VIDEO = "grab video"
 COMMENT_MATCH_IMPORT = "import upcoming del matches"
 COMMENT_JOSI_BOT = "Josi-Bot"
@@ -48,6 +50,7 @@ COMMENT_HENDRIK_BOT = "Hendrik-Bot"
 COMMENT_MATCH_PUMPUP = "send match pumpup"
 COMMENT_LIVE_SCORE = "get live-score"
 COMMENT_GET_LINEUP = "get lineup"
+COMMENT_GET_RANKING = "get del table"
 COMMENT_START_MESSENGER = "start messenger"
 COMMENT_STOP_MESSENGER = "stop messenger"
 SCREEN_BIN = "/usr/bin/screen"
@@ -153,6 +156,8 @@ def resolve_life_score_args():
         args.append("--debug")
     if _env_flag("CRON_LIFE_SCORE_FAKE_BREAKTR"):
         args.append("--fake-breaktr")
+    if _env_flag("CRON_LIFE_SCORE_DRY_RUN"):
+        args.append("--dry-run")
     return " ".join(args)
 
 
@@ -163,6 +168,14 @@ def resolve_lineup_args():
         args.append("--debug")
     if _env_flag("CRON_LINEUP_DRY_RUN"):
         args.append("--dry-run")
+    return " ".join(args)
+
+
+def resolve_ranking_args():
+    """Build get_ranking.py flags from defaults and environment."""
+    args = [GET_RANKING_ARGS]
+    if _env_flag("CRON_RANKING_DEBUG"):
+        args.append("--debug")
     return " ".join(args)
 
 
@@ -364,6 +377,17 @@ def add_baseline_jobs(cron, script_dir):
     mimport.hour.on(5)
     mimport.minute.on(15)
 
+    rank = create_script_job(
+        cron,
+        script_dir,
+        SCRIPT_GET_RANKING,
+        COMMENT_GET_RANKING,
+        extra_args=resolve_ranking_args(),
+        mount_delapp_cfg=True,
+    )
+    rank.hour.on(2, 23)
+    rank.minute.on(0)
+
     #trtchk = create_script_job(
     #    cron, script_dir, "get_training_times.py", "Check for new training times"
     #)
@@ -373,10 +397,6 @@ def add_baseline_jobs(cron, script_dir):
     #backup = create_script_job(cron, script_dir, "tipp_backup.sh", "backup tippgame")
     #backup.hour.on(1)
     #backup.minute.on(5)
-
-    #rank = create_script_job(cron, script_dir, "get_ranking.py", "get del table")
-    #rank.hour.on(2, 23)
-    # rank.minute.on(0)
 
 
 def add_match_jobs(cron, script_dir, match_date, match_id, tzone):

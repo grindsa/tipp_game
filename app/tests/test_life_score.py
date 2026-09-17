@@ -68,6 +68,8 @@ class LifeScoreTests(SimpleTestCase):
         self.assertTrue(args.debug)
         self.assertTrue(args.fake_breaktr)
         self.assertTrue(ls.parse_args(["-f"]).fake_breaktr)
+        self.assertFalse(defaults.dry_run)
+        self.assertTrue(ls.parse_args(["--dry-run"]).dry_run)
 
     def test_resolve_thresholds_for_normal_and_fake_breaktr(self):
         self.assertEqual(
@@ -318,7 +320,6 @@ class LifeScoreTests(SimpleTestCase):
         }
         text = ls.get_gamestat_text(9, stats_fn=lambda *_args: stats)
         self.assertIn("Torschüsse: 10 / 8", text)
-        self.assertIn(ls.GAMESTATS_URL, text)
         self.assertIsNone(ls.get_gamestat_text(9, stats_fn=lambda *_args: None))
 
     def test_run_skips_old_and_finished_matches(self):
@@ -407,6 +408,158 @@ class LifeScoreTests(SimpleTestCase):
                 rc = ls.main(["--debug"])
         self.assertEqual(rc, ls.EXIT_RUNTIME_ERROR)
         self.assertIn("life_score failed: boom", output.getvalue())
+
+    def test_main_passes_flags(self):
+        with mock.patch.object(ls, "run", return_value=ls.EXIT_SUCCESS) as run_fn:
+            self.assertEqual(ls.main([]), ls.EXIT_SUCCESS)
+            run_fn.assert_called_once_with(
+                debug=False, fake_breaktr=False, dry_run=False
+            )
+        with mock.patch.object(ls, "run", return_value=ls.EXIT_SUCCESS) as run_fn:
+            self.assertEqual(ls.main(["-d", "--dry-run", "-f"]), ls.EXIT_SUCCESS)
+            run_fn.assert_called_once_with(
+                debug=True, fake_breaktr=True, dry_run=True
+            )
+
+    def test_dispatch_whatsapp_and_threema_dry_run_skip_send(self):
+        send_fn = mock.Mock()
+        output = io.StringIO()
+        with redirect_stdout(output):
+            ls.dispatch_whatsapp(SETTINGS, "111", "hello", dry_run=True, send_fn=send_fn)
+            ls.dispatch_threema(SETTINGS, "DBUF47V8", "hello", dry_run=True, send_fn=send_fn)
+        send_fn.assert_not_called()
+        printed = output.getvalue()
+        self.assertIn("dry-run whatsapp 111:", printed)
+        self.assertIn("dry-run threema DBUF47V8:", printed)
+
+        ls.dispatch_whatsapp(SETTINGS, "111", "hello", dry_run=False, send_fn=send_fn)
+        send_fn.assert_called_once_with("wa.local", 9009, "111", "hello")
+
+    def test_send_yao_dry_run_prints_and_skips_send(self):
+        class FakeQuerySet(object):
+            def __init__(self, rows):
+                self.rows = list(rows)
+
+            def filter(self, **_kwargs):
+                return self
+
+            def values(self, *_args, **_kwargs):
+                return list(self.rows)
+
+            def values_list(self, *_args, **_kwargs):
+                if _args:
+                    key = _args[0]
+                    return [
+                        row[key] if isinstance(row, dict) else row for row in self.rows
+                    ]
+                return list(self.rows)
+
+        class FakeModel(object):
+            def __init__(self, rows):
+                self.objects = FakeQuerySet(rows)
+
+        wa_send = mock.Mock()
+        tr_send = mock.Mock()
+        sleep_fn = mock.Mock()
+        output = io.StringIO()
+        with redirect_stdout(output):
+            ls.send_yao(
+                None,
+                0,
+                0,
+                9,
+                None,
+                match_start=True,
+                settings_obj=SETTINGS,
+                group_model=FakeModel(
+                    [
+                        {
+                            "number": "111",
+                            "group_id": 1,
+                            "group__name": "tipp",
+                            "yao_message": False,
+                            "alert": True,
+                        }
+                    ]
+                ),
+                user_model=FakeModel([{"username": "alice", "id": 1}]),
+                usersetting_model=FakeModel(["DBUF47V8"]),
+                tip_model=FakeModel([]),
+                wa_send_fn=wa_send,
+                threema_send_fn=tr_send,
+                sleep_fn=sleep_fn,
+                dry_run=True,
+            )
+        wa_send.assert_not_called()
+        tr_send.assert_not_called()
+        sleep_fn.assert_not_called()
+        printed = output.getvalue()
+        self.assertIn("dry-run whatsapp 111:", printed)
+        self.assertIn("Das Spiel hat begonnen", printed)
+        self.assertIn("dry-run threema DBUF47V8:", printed)
+
+    def test_send_alert_dry_run_prints_and_skips_send(self):
+        class FakeQuerySet(object):
+            def __init__(self, rows):
+                self.rows = list(rows)
+
+            def filter(self, **_kwargs):
+                return self
+
+            def values(self, *_args, **_kwargs):
+                return list(self.rows)
+
+            def values_list(self, *_args, **_kwargs):
+                if _args:
+                    key = _args[0]
+                    return [
+                        row[key] if isinstance(row, dict) else row for row in self.rows
+                    ]
+                return list(self.rows)
+
+            def __getitem__(self, key):
+                return self.rows[key]
+
+        class FakeModel(object):
+            def __init__(self, rows):
+                self.objects = FakeQuerySet(rows)
+
+        wa_send = mock.Mock()
+        tr_send = mock.Mock()
+        sleep_fn = mock.Mock()
+        output = io.StringIO()
+        with redirect_stdout(output):
+            ls.send_alert(
+                9,
+                "1. Drittel beendet. Zwischenstand: 1:0",
+                "1:0",
+                settings_obj=SETTINGS,
+                group_model=FakeModel(
+                    [
+                        {
+                            "number": "111",
+                            "group_id": 1,
+                            "group__name": "tipp",
+                            "alert": True,
+                        }
+                    ]
+                ),
+                user_model=FakeModel([{"username": "alice", "id": 1}]),
+                usersetting_model=FakeModel(["DBUF47V8"]),
+                tip_model=FakeModel([]),
+                match_model=FakeModel([{"no_bet": False}]),
+                wa_send_fn=wa_send,
+                threema_send_fn=tr_send,
+                sleep_fn=sleep_fn,
+                dry_run=True,
+            )
+        wa_send.assert_not_called()
+        tr_send.assert_not_called()
+        sleep_fn.assert_not_called()
+        printed = output.getvalue()
+        self.assertIn("dry-run whatsapp 111:", printed)
+        self.assertIn("1. Drittel beendet", printed)
+        self.assertIn("dry-run threema DBUF47V8:", printed)
 
     def test_build_endgame_ranking_appends_points(self):
         users = [{"username": "alice"}, {"username": "bob"}]

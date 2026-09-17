@@ -89,6 +89,15 @@ class CronCreateTests(SimpleTestCase):
         match_jobs[0].hour.on.assert_called_once_with(5)
         match_jobs[0].minute.on.assert_called_once_with(15)
 
+        ranking_jobs = [job for job in jobs if job.comment == cron_create.COMMENT_GET_RANKING]
+        self.assertEqual(len(ranking_jobs), 1)
+        self.assertEqual(
+            ranking_jobs[0].command,
+            "/app/tools/get_ranking.py --year 2026 --table-id 37",
+        )
+        ranking_jobs[0].hour.on.assert_called_once_with(2, 23)
+        ranking_jobs[0].minute.on.assert_called_once_with(0)
+
     def test_add_match_jobs_schedules_shared_tipp_bot_profiles(self):
         jobs = []
 
@@ -241,6 +250,10 @@ class CronCreateTests(SimpleTestCase):
             prefix_with_cfg + " /app/tools/get_lineup.py",
         )
         self.assertEqual(
+            commands[cron_create.COMMENT_GET_RANKING],
+            prefix_with_cfg + " /app/tools/get_ranking.py --year 2026 --table-id 37",
+        )
+        self.assertEqual(
             commands[cron_create.COMMENT_JOSI_BOT],
             prefix + " /app/tools/tipp_bot.py --profile josi",
         )
@@ -308,7 +321,7 @@ class CronCreateTests(SimpleTestCase):
     def test_resolve_life_score_args_from_env(self):
         with mock.patch.dict(
             os.environ,
-            {"CRON_LIFE_SCORE_DEBUG": "", "CRON_LIFE_SCORE_FAKE_BREAKTR": ""},
+            {"CRON_LIFE_SCORE_DEBUG": "", "CRON_LIFE_SCORE_FAKE_BREAKTR": "", "CRON_LIFE_SCORE_DRY_RUN": ""},
             clear=False,
         ):
             self.assertEqual(cron_create.resolve_life_score_args(), "")
@@ -317,12 +330,13 @@ class CronCreateTests(SimpleTestCase):
             {
                 "CRON_LIFE_SCORE_DEBUG": "true",
                 "CRON_LIFE_SCORE_FAKE_BREAKTR": "1",
+                "CRON_LIFE_SCORE_DRY_RUN": "true",
             },
             clear=False,
         ):
             self.assertEqual(
                 cron_create.resolve_life_score_args(),
-                "--debug --fake-breaktr",
+                "--debug --fake-breaktr --dry-run",
             )
 
     def test_add_match_jobs_passes_life_score_flags(self):
@@ -435,6 +449,61 @@ class CronCreateTests(SimpleTestCase):
         self.assertEqual(
             lineup[0].command,
             prefix_with_cfg + " /app/tools/get_lineup.py --debug",
+        )
+
+    def test_resolve_ranking_args_from_env(self):
+        with mock.patch.dict(os.environ, {"CRON_RANKING_DEBUG": ""}, clear=False):
+            self.assertEqual(
+                cron_create.resolve_ranking_args(),
+                "--year 2026 --table-id 37",
+            )
+        with mock.patch.dict(os.environ, {"CRON_RANKING_DEBUG": "true"}, clear=False):
+            self.assertEqual(
+                cron_create.resolve_ranking_args(),
+                "--year 2026 --table-id 37 --debug",
+            )
+
+    def test_add_baseline_jobs_passes_ranking_debug_flag(self):
+        jobs = []
+
+        class FakeJob(object):
+            def __init__(self, command, comment):
+                self.command = command
+                self.comment = comment
+                self.hour = mock.Mock()
+                self.minute = mock.Mock()
+
+        def fake_create_job(_cron, command, comment):
+            job = FakeJob(command, comment)
+            jobs.append(job)
+            return job
+
+        prefix = (
+            "docker compose --project-directory /srv/stacks/tipp_game "
+            "run --rm --no-deps jobs python"
+        )
+        volume = "-v /srv/data/tipp_game/delapphelper.cfg:/app/tools/delapphelper.cfg:ro"
+
+        with mock.patch.dict(
+            os.environ,
+            {
+                "CRON_EXECUTION_PREFIX": prefix,
+                "CRON_RANKING_DEBUG": "true",
+            },
+            clear=False,
+        ):
+            with mock.patch.object(cron_create, "create_job", side_effect=fake_create_job):
+                cron_create.add_baseline_jobs(object(), "/app/tools")
+
+        prefix_with_cfg = (
+            "docker compose --project-directory /srv/stacks/tipp_game "
+            "run --rm --no-deps {0} jobs python".format(volume)
+        )
+        ranking = [job for job in jobs if job.comment == cron_create.COMMENT_GET_RANKING]
+        self.assertEqual(len(ranking), 1)
+        self.assertEqual(
+            ranking[0].command,
+            prefix_with_cfg + " /app/tools/get_ranking.py --year 2026 --table-id 37 --debug",
         )
 
     def test_acquire_script_lock_non_blocking(self):

@@ -11,6 +11,7 @@ import os
 import sys
 import time
 from collections import namedtuple
+from functools import partial
 from urllib.request import urlopen
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
@@ -83,6 +84,11 @@ def parse_args(argv=None):
         "--fake-breaktr",
         action="store_true",
         help="Use shortened match-age and break thresholds for testing.",
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print generated messages instead of sending WhatsApp/Threema.",
     )
     return parser.parse_args(argv)
 
@@ -494,6 +500,34 @@ def has_threema_settings(settings_obj, require_key=True):
     return True
 
 
+def dispatch_whatsapp(settings_obj, recipient, message, dry_run=False, send_fn=None):
+    """Send a WhatsApp message, or print it during dry-run."""
+    if dry_run:
+        print("dry-run whatsapp {0}:\n{1}".format(recipient, message))
+        return
+    sender = send_fn or simple_send
+    sender(settings_obj.WA_SRV, settings_obj.WA_PORT, recipient, message)
+
+
+def dispatch_threema(
+    settings_obj, receiver, message, dry_run=False, send_fn=None, secret_key=None
+):
+    """Send a Threema message, or print it during dry-run."""
+    if dry_run:
+        print("dry-run threema {0}:\n{1}".format(receiver, message))
+        return
+    sender = send_fn or send_threema
+    if secret_key is None:
+        secret_key = getattr(settings_obj, "TR_SK", None)
+    sender(
+        settings_obj.TR_ID,
+        settings_obj.TR_SECRET,
+        secret_key,
+        receiver,
+        message,
+    )
+
+
 def send_yao(
     scorer_name,
     home_score,
@@ -509,6 +543,7 @@ def send_yao(
     wa_send_fn=None,
     threema_send_fn=None,
     sleep_fn=None,
+    dry_run=False,
 ):
     """Notify groups about kickoff or a goal, including you-are-out status."""
     settings_obj = settings_obj or settings
@@ -567,33 +602,33 @@ def send_yao(
                 wa_message, group_name, yao_dic, yai_dic
             )
 
-        if (
-            wa_message
-            and number
-            and has_whatsapp_settings(settings_obj)
-        ):
-            wa_send_fn(
-                settings_obj.WA_SRV, settings_obj.WA_PORT, number, wa_message
+        if wa_message and number and (dry_run or has_whatsapp_settings(settings_obj)):
+            dispatch_whatsapp(
+                settings_obj,
+                number,
+                wa_message,
+                dry_run=dry_run,
+                send_fn=wa_send_fn,
             )
-            sleep_fn(WHATSAPP_SLEEP_SECONDS)
+            if not dry_run:
+                sleep_fn(WHATSAPP_SLEEP_SECONDS)
 
         threema_message = message
         if group["yao_message"] and yao_dic and threema_message and not match_start:
             threema_message = append_yao_threema(
                 threema_message, group_name, yao_dic
             )
-        if (
-            threema_message
-            and threema_dic
-            and has_threema_settings(settings_obj, require_key=True)
+        if threema_message and threema_dic and (
+            dry_run or has_threema_settings(settings_obj, require_key=True)
         ):
             for recipient in threema_dic.values():
-                threema_send_fn(
-                    settings_obj.TR_ID,
-                    settings_obj.TR_SECRET,
-                    settings_obj.TR_SK,
+                dispatch_threema(
+                    settings_obj,
                     recipient,
                     threema_message,
+                    dry_run=dry_run,
+                    send_fn=threema_send_fn,
+                    secret_key=getattr(settings_obj, "TR_SK", None),
                 )
 
 
@@ -713,6 +748,7 @@ def send_alert(
     wa_send_fn=None,
     threema_send_fn=None,
     sleep_fn=None,
+    dry_run=False,
 ):
     """Send a period/game alert to groups with alert enabled."""
     settings_obj = settings_obj or settings
@@ -766,18 +802,24 @@ def send_alert(
             )
             msg = build_endgame_ranking(msg, users, tip_dic, result, score_list, no_bet)
 
-        if number and has_whatsapp_settings(settings_obj):
-            wa_send_fn(settings_obj.WA_SRV, settings_obj.WA_PORT, number, msg)
-            sleep_fn(WHATSAPP_SLEEP_SECONDS)
-        if threema_dic and has_threema_settings(settings_obj, require_key=False):
+        if number and (dry_run or has_whatsapp_settings(settings_obj)):
+            dispatch_whatsapp(
+                settings_obj, number, msg, dry_run=dry_run, send_fn=wa_send_fn
+            )
+            if not dry_run:
+                sleep_fn(WHATSAPP_SLEEP_SECONDS)
+        if threema_dic and (
+            dry_run or has_threema_settings(settings_obj, require_key=False)
+        ):
             for recipient in threema_dic.values():
                 try:
-                    threema_send_fn(
-                        settings_obj.TR_ID,
-                        settings_obj.TR_SECRET,
-                        getattr(settings_obj, "TR_SK", None),
+                    dispatch_threema(
+                        settings_obj,
                         recipient,
                         msg,
+                        dry_run=dry_run,
+                        send_fn=threema_send_fn,
+                        secret_key=getattr(settings_obj, "TR_SK", None),
                     )
                 except Exception:
                     pass
@@ -797,10 +839,11 @@ def check_report_period(
     update_match_fn=None,
     send_alert_fn=None,
     stats_fn=None,
+    dry_run=False,
 ):
     """Advance period state and send the matching alert when needed."""
     update_match_fn = update_match_fn or update_match
-    send_alert_fn = send_alert_fn or send_alert
+    send_alert_fn = send_alert_fn or partial(send_alert, dry_run=dry_run)
     print_debug(
         debug,
         "chk_rep: {0},{1},{2},{3},{4},{5}".format(
@@ -867,6 +910,7 @@ def apply_goal_update(debug, state, update, send_yao_fn=None, update_match_fn=No
 def run(
     debug=False,
     fake_breaktr=False,
+    dry_run=False,
     now_uts=None,
     season_id=None,
     last_match_fn=None,
@@ -910,8 +954,8 @@ def run(
         return EXIT_SUCCESS
 
     update_match_fn = update_match_fn or update_match
-    send_yao_fn = send_yao_fn or send_yao
-    check_period_fn = check_period_fn or check_report_period
+    send_yao_fn = send_yao_fn or partial(send_yao, dry_run=dry_run)
+    check_period_fn = check_period_fn or partial(check_report_period, dry_run=dry_run)
 
     if state.ticker_id == 0:
         fetch_fn = fetch_players_fn or fetch_and_store_players
@@ -973,7 +1017,9 @@ def main(argv=None):
     """CLI entry point."""
     args = parse_args(argv)
     try:
-        return run(debug=args.debug, fake_breaktr=args.fake_breaktr)
+        return run(
+            debug=args.debug, fake_breaktr=args.fake_breaktr, dry_run=args.dry_run
+        )
     except Exception as exc:
         print("life_score failed: {0}".format(exc))
         return EXIT_RUNTIME_ERROR
