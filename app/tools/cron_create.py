@@ -473,14 +473,14 @@ def create_cron_entries(tzone, dry_run=False):
     add_baseline_jobs(cron, script_dir)
 
     no_bet = "n/a"
-    # if match_date and match_date <= uts_now + threshold and uts_now < match_date:
-    #    no_bet = add_match_jobs(cron, script_dir, match_date, match_id, tzone)
+    if match_date and match_date <= uts_now + threshold and uts_now < match_date:
+        no_bet = add_match_jobs(cron, script_dir, match_date, match_id, tzone)
 
-    # Keep cron generation independent from optional notification delivery.
-    try:
-        notify_cron_update(no_bet)
-    except Exception as exc:
-        print("notify_cron_update failed: {0}".format(exc))
+        # Keep cron generation independent from optional notification delivery.
+        try:
+            notify_cron_update(no_bet)
+        except Exception as exc:
+            print("notify_cron_update failed: {0}".format(exc))
 
     # add_recent_match_jobs(cron, script_dir, uts_now, threshold, l_match_date, match_id)
     write_cron_file(
