@@ -80,6 +80,10 @@ class MatchPumpupTests(SimpleTestCase):
             "http://tippspiel.example/game/tip",
         )
 
+    def test_format_match_date_uses_utc(self):
+        self.assertEqual(mp.format_match_date(0), "01.01.70")
+        self.assertEqual(mp.format_match_date(86400), "02.01.70")
+
     def test_match_is_within_window(self):
         self.assertTrue(mp.match_is_within_window(100, 50, threshold=60))
         self.assertFalse(mp.match_is_within_window(100, 100, threshold=60))
@@ -243,6 +247,15 @@ class MatchPumpupTests(SimpleTestCase):
         self.assertIn('Ergebnisse der letzen Spiele der "Adler Mannheim"', body)
         self.assertIn("STR - MAN 2:2", body)
         self.assertNotIn("KEC", body)
+
+        self.assertEqual(
+            mp.format_opponent_recent_matches([], {}, 15, "der", "Adler Mannheim"),
+            "",
+        )
+        other_season_only = mp.format_opponent_recent_matches(
+            [5], match_dic, 15, "der", "Adler Mannheim"
+        )
+        self.assertEqual(other_season_only, "")
 
     def test_build_intro_and_no_bet_messages(self):
         no_bet = mp.build_no_bet_message("Adler Mannheim", "19:30")

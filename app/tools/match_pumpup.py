@@ -111,8 +111,10 @@ def format_match_time(match_date):
 
 
 def format_match_date(match_uts):
-    """Format a match timestamp the way the original pump-up message did."""
-    return datetime.datetime.utcfromtimestamp(match_uts).strftime("%d.%m.%y")
+    """Format a match timestamp as a UTC date string."""
+    return datetime.datetime.fromtimestamp(
+        match_uts, tz=datetime.timezone.utc
+    ).strftime("%d.%m.%y")
 
 
 def shorten_player_name(player):
@@ -438,19 +440,12 @@ def format_opponent_recent_matches(
     sort_list, match_dic, season_id, article_g, opponent_name
 ):
     """Format the opponent's recent results in the current season."""
-    if not sort_list:
-        return ""
-
-    lines = [
-        '\n*Ergebnisse der letzen Spiele {1} "{2}":*\n'.format(
-            len(sort_list), article_g, opponent_name
-        )
-    ]
-    for match_id in sorted(sort_list, reverse=True):
+    result_lines = []
+    for match_id in sorted(sort_list or [], reverse=True):
         match = match_dic[match_id]
         if match["season_id"] != season_id:
             continue
-        lines.append(
+        result_lines.append(
             "{0}: {1} - {2} {3}\n".format(
                 format_match_date(match["date"]),
                 match["home_team__short_name"],
@@ -458,7 +453,13 @@ def format_opponent_recent_matches(
                 match["result"],
             )
         )
-    return "".join(lines)
+    if not result_lines:
+        return ""
+
+    header = '\n*Ergebnisse der letzen {0} Spiele {1} "{2}":*\n'.format(
+        len(sort_list), article_g, opponent_name
+    )
+    return header + "".join(result_lines)
 
 
 def format_league_body(
