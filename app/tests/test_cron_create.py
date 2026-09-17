@@ -112,6 +112,45 @@ class CronCreateTests(SimpleTestCase):
         self.assertEqual(josi[0].command, "/app/tools/tipp_bot.py --profile josi")
         self.assertEqual(hendrik[0].command, "/app/tools/tipp_bot.py --profile hendrik")
 
+        pumpup = [job for job in jobs if job.comment == cron_create.COMMENT_MATCH_PUMPUP]
+        self.assertEqual(len(pumpup), 1)
+        self.assertEqual(pumpup[0].command, "/app/tools/match_pumpup.py")
+        pumpup[0].hour.on.assert_called_once_with(9)
+        pumpup[0].minute.on.assert_called_once_with(30)
+
+    def test_add_match_jobs_schedules_pumpup_for_no_bet_matches(self):
+        jobs = []
+
+        class FakeJob(object):
+            def __init__(self, command, comment):
+                self.command = command
+                self.comment = comment
+                self.hour = mock.Mock()
+                self.minute = mock.Mock()
+
+        def fake_create_job(_cron, command, comment):
+            job = FakeJob(command, comment)
+            jobs.append(job)
+            return job
+
+        match_qs = mock.Mock()
+        match_qs.filter.return_value = match_qs
+        match_qs.order_by.return_value = match_qs
+        match_qs.values_list.return_value = [True]
+
+        with mock.patch.dict(os.environ, {"CRON_EXECUTION_PREFIX": ""}, clear=False):
+            with mock.patch.object(cron_create.Match, "objects", match_qs):
+                with mock.patch.object(cron_create, "create_job", side_effect=fake_create_job):
+                    no_bet = cron_create.add_match_jobs(
+                        object(), "/app/tools", 1700000000, 9, cron_create.TIMEZONE
+                    )
+
+        self.assertTrue(no_bet)
+        comments = [job.comment for job in jobs]
+        self.assertIn(cron_create.COMMENT_MATCH_PUMPUP, comments)
+        self.assertNotIn(cron_create.COMMENT_JOSI_BOT, comments)
+        self.assertNotIn(cron_create.COMMENT_HENDRIK_BOT, comments)
+
     def test_acquire_script_lock_non_blocking(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             lock_path = os.path.join(tmp_dir, 'cron.lock')

@@ -36,11 +36,13 @@ SCRIPT_TIPP_REMINDER = "tipp_reminder.py"
 SCRIPT_LOAD_VIDEO_STREAMS = "load_video_streams.py"
 SCRIPT_MATCH_IMPORT = "match_import.py"
 SCRIPT_TIPP_BOT = "tipp_bot.py"
+SCRIPT_MATCH_PUMPUP = "match_pumpup.py"
 MATCH_IMPORT_ARGS = "--year 2026 --league-id 1"
 COMMENT_GRAB_VIDEO = "grab video"
 COMMENT_MATCH_IMPORT = "import upcoming del matches"
 COMMENT_JOSI_BOT = "Josi-Bot"
 COMMENT_HENDRIK_BOT = "Hendrik-Bot"
+COMMENT_MATCH_PUMPUP = "send match pumpup"
 
 EXIT_SUCCESS = 0
 EXIT_RUNTIME_ERROR = 1
@@ -375,7 +377,9 @@ def add_match_jobs(cron, script_dir, match_date, match_id, tzone):
     live.hour.during(summary_hour, summary_hour + 3)
     live.minute.every(1)
 
-    pumpup = create_script_job(cron, script_dir, "match_pumpup.py", "send match pumpup")
+    pumpup = create_script_job(
+        cron, script_dir, SCRIPT_MATCH_PUMPUP, COMMENT_MATCH_PUMPUP
+    )
     pumpup.hour.on(9)
     pumpup.minute.on(30)
 
