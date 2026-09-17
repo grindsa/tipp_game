@@ -499,7 +499,7 @@ def create_cron_entries(tzone, dry_run=False):
     uts_now = int(time.time())
     season_id = len(list(Season.objects.values()))
     match_id, match_date, _tvbc = get_next_match(uts_now, season_id)
-    _l_match_id, l_match_date, _l_match_day = get_last_match(uts_now, season_id)
+    _l_match_id, _l_match_date, _l_match_day = get_last_match(uts_now, season_id)
 
     # Build a fresh in-memory crontab so legacy comments from existing files
     # are not carried over into new output.

@@ -257,6 +257,10 @@ class MatchPumpupTests(SimpleTestCase):
         )
         self.assertEqual(other_season_only, "")
 
+    def test_append_signature_uses_sailboat(self):
+        self.assertEqual(mp.BOOT_SIGNATURE, "\N{SAILBOAT}")
+        self.assertEqual(mp.append_signature("Hallo"), "Hallo\n\nEuer ⛵")
+
     def test_build_intro_and_no_bet_messages(self):
         no_bet = mp.build_no_bet_message("Adler Mannheim", "19:30")
         self.assertIn('gegen "Adler Mannheim"', no_bet)
@@ -352,7 +356,7 @@ class MatchPumpupTests(SimpleTestCase):
         )
         collect_stats.assert_not_called()
         self.assertIn("kein Ligaspiel", message)
-        self.assertIn("Euer ", message)
+        self.assertTrue(message.endswith("Euer {0}".format(mp.BOOT_SIGNATURE)))
 
     def test_build_pumpup_message_playoff_skips_league_table(self):
         details = HOME_DETAILS._replace(playoff=True)
