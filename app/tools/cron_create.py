@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Create daily cron entries for tippspiel."""
 
@@ -38,12 +38,16 @@ SCRIPT_MATCH_IMPORT = "match_import.py"
 SCRIPT_TIPP_BOT = "tipp_bot.py"
 SCRIPT_MATCH_PUMPUP = "match_pumpup.py"
 SCRIPT_YOWSUP_DMN = "yowsup_dmn.py"
+SCRIPT_LIFE_SCORE = "life_score.py"
+SCRIPT_GET_LINEUP = "get_lineup.py"
 MATCH_IMPORT_ARGS = "--year 2026 --league-id 1"
 COMMENT_GRAB_VIDEO = "grab video"
 COMMENT_MATCH_IMPORT = "import upcoming del matches"
 COMMENT_JOSI_BOT = "Josi-Bot"
 COMMENT_HENDRIK_BOT = "Hendrik-Bot"
 COMMENT_MATCH_PUMPUP = "send match pumpup"
+COMMENT_LIVE_SCORE = "get live-score"
+COMMENT_GET_LINEUP = "get lineup"
 COMMENT_START_MESSENGER = "start messenger"
 COMMENT_STOP_MESSENGER = "stop messenger"
 SCREEN_BIN = "/usr/bin/screen"
@@ -135,6 +139,31 @@ def resolve_lock_blocking():
     """Resolve lock behavior. Default is non-blocking (skip when busy)."""
     value = os.environ.get("CRON_LOCK_BLOCKING", "false").strip().lower()
     return value in ("1", "true", "yes", "on")
+
+
+def _env_flag(name):
+    """Return True when an environment flag is enabled."""
+    return os.environ.get(name, "").strip().lower() in ("1", "true", "yes", "on")
+
+
+def resolve_life_score_args():
+    """Build optional life_score.py flags from environment."""
+    args = []
+    if _env_flag("CRON_LIFE_SCORE_DEBUG"):
+        args.append("--debug")
+    if _env_flag("CRON_LIFE_SCORE_FAKE_BREAKTR"):
+        args.append("--fake-breaktr")
+    return " ".join(args)
+
+
+def resolve_lineup_args():
+    """Build optional get_lineup.py flags from environment."""
+    args = []
+    if _env_flag("CRON_LINEUP_DEBUG"):
+        args.append("--debug")
+    if _env_flag("CRON_LINEUP_DRY_RUN"):
+        args.append("--dry-run")
+    return " ".join(args)
 
 
 def acquire_script_lock(lock_file, blocking=False):
@@ -422,7 +451,14 @@ def add_match_jobs(cron, script_dir, match_date, match_id, tzone):
         liverank.hour.during(13, 22)
         liverank.minute.every(5)
 
-        lineup = create_script_job(cron, script_dir, "get_lineup.py", "get lineup")
+        lineup = create_script_job(
+            cron,
+            script_dir,
+            SCRIPT_GET_LINEUP,
+            COMMENT_GET_LINEUP,
+            extra_args=resolve_lineup_args(),
+            mount_delapp_cfg=True,
+        )
         lineup.hour.on(summary_hour - 2)
         lineup.hour.during(summary_hour - 2, summary_hour + 1).every(1)
         lineup.minute.every(15)
@@ -439,7 +475,13 @@ def add_match_jobs(cron, script_dir, match_date, match_id, tzone):
 
         add_messenger_jobs(cron, script_dir, match_date, tzone)
 
-    live = create_script_job(cron, script_dir, "life_score.py", "get live-score")
+    live = create_script_job(
+        cron,
+        script_dir,
+        SCRIPT_LIFE_SCORE,
+        COMMENT_LIVE_SCORE,
+        extra_args=resolve_life_score_args(),
+    )
     live.hour.on(summary_hour)
     live.hour.during(summary_hour, summary_hour + 3)
     live.minute.every(1)

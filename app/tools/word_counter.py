@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 """Count words from recent wallabag entries and persist top words."""
 
 import os

@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """ check threema credits and
  - send warning via WA if remaining credits are less than 10

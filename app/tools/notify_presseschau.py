@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 """Check presseschau for new articles and send WhatsApp notifications."""
 
 import argparse

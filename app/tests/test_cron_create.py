@@ -157,6 +157,14 @@ class CronCreateTests(SimpleTestCase):
             match_date + cron_create.MESSENGER_STOP_AFTER_SECONDS, match_date
         )
 
+        live = [job for job in jobs if job.comment == cron_create.COMMENT_LIVE_SCORE]
+        self.assertEqual(len(live), 1)
+        self.assertEqual(live[0].command, "/app/tools/life_score.py")
+
+        lineup = [job for job in jobs if job.comment == cron_create.COMMENT_GET_LINEUP]
+        self.assertEqual(len(lineup), 1)
+        self.assertEqual(lineup[0].command, "/app/tools/get_lineup.py")
+
     def test_resolve_delapphelper_run_opts_keeps_volume_flags(self):
         with mock.patch.dict(os.environ, {"CRON_DELAPPHELPER_VOLUME": "-v /cfg:/cfg:ro"}):
             self.assertEqual(cron_create.resolve_delapphelper_run_opts(), "-v /cfg:/cfg:ro")
@@ -229,8 +237,16 @@ class CronCreateTests(SimpleTestCase):
             prefix_with_cfg + " /app/tools/match_pumpup.py",
         )
         self.assertEqual(
+            commands[cron_create.COMMENT_GET_LINEUP],
+            prefix_with_cfg + " /app/tools/get_lineup.py",
+        )
+        self.assertEqual(
             commands[cron_create.COMMENT_JOSI_BOT],
             prefix + " /app/tools/tipp_bot.py --profile josi",
+        )
+        self.assertEqual(
+            commands[cron_create.COMMENT_LIVE_SCORE],
+            prefix + " /app/tools/life_score.py",
         )
         self.assertNotIn(volume, commands["create input for tag cloud"])
 
@@ -268,6 +284,8 @@ class CronCreateTests(SimpleTestCase):
         self.assertNotIn(cron_create.COMMENT_HENDRIK_BOT, comments)
         self.assertNotIn(cron_create.COMMENT_START_MESSENGER, comments)
         self.assertNotIn(cron_create.COMMENT_STOP_MESSENGER, comments)
+        self.assertNotIn(cron_create.COMMENT_GET_LINEUP, comments)
+        self.assertIn(cron_create.COMMENT_LIVE_SCORE, comments)
 
     def test_messenger_start_command_uses_execution_prefix(self):
         prefix = (
@@ -285,6 +303,138 @@ class CronCreateTests(SimpleTestCase):
         self.assertEqual(
             cron_create.build_messenger_stop_command(),
             "/usr/bin/screen -S yowsupd-screen -X quit",
+        )
+
+    def test_resolve_life_score_args_from_env(self):
+        with mock.patch.dict(
+            os.environ,
+            {"CRON_LIFE_SCORE_DEBUG": "", "CRON_LIFE_SCORE_FAKE_BREAKTR": ""},
+            clear=False,
+        ):
+            self.assertEqual(cron_create.resolve_life_score_args(), "")
+        with mock.patch.dict(
+            os.environ,
+            {
+                "CRON_LIFE_SCORE_DEBUG": "true",
+                "CRON_LIFE_SCORE_FAKE_BREAKTR": "1",
+            },
+            clear=False,
+        ):
+            self.assertEqual(
+                cron_create.resolve_life_score_args(),
+                "--debug --fake-breaktr",
+            )
+
+    def test_add_match_jobs_passes_life_score_flags(self):
+        jobs = []
+
+        class FakeJob(object):
+            def __init__(self, command, comment):
+                self.command = command
+                self.comment = comment
+                self.hour = mock.Mock()
+                self.minute = mock.Mock()
+
+        def fake_create_job(_cron, command, comment):
+            job = FakeJob(command, comment)
+            jobs.append(job)
+            return job
+
+        match_qs = mock.Mock()
+        match_qs.filter.return_value = match_qs
+        match_qs.order_by.return_value = match_qs
+        match_qs.values_list.return_value = [False]
+        prefix = (
+            "docker compose --project-directory /srv/stacks/tipp_game "
+            "run --rm --no-deps jobs python"
+        )
+
+        with mock.patch.dict(
+            os.environ,
+            {
+                "CRON_EXECUTION_PREFIX": prefix,
+                "CRON_LIFE_SCORE_DEBUG": "true",
+                "CRON_LIFE_SCORE_FAKE_BREAKTR": "true",
+            },
+            clear=False,
+        ):
+            with mock.patch.object(cron_create.Match, "objects", match_qs):
+                with mock.patch.object(cron_create, "create_job", side_effect=fake_create_job):
+                    cron_create.add_match_jobs(
+                        object(), "/app/tools", 1700000000, 9, cron_create.TIMEZONE
+                    )
+
+        live = [job for job in jobs if job.comment == cron_create.COMMENT_LIVE_SCORE]
+        self.assertEqual(len(live), 1)
+        self.assertEqual(
+            live[0].command,
+            prefix + " /app/tools/life_score.py --debug --fake-breaktr",
+        )
+
+    def test_resolve_lineup_args_from_env(self):
+        with mock.patch.dict(
+            os.environ, {"CRON_LINEUP_DEBUG": "", "CRON_LINEUP_DRY_RUN": ""}, clear=False
+        ):
+            self.assertEqual(cron_create.resolve_lineup_args(), "")
+        with mock.patch.dict(os.environ, {"CRON_LINEUP_DEBUG": "true"}, clear=False):
+            self.assertEqual(cron_create.resolve_lineup_args(), "--debug")
+        with mock.patch.dict(os.environ, {"CRON_LINEUP_DEBUG": "1"}, clear=False):
+            self.assertEqual(cron_create.resolve_lineup_args(), "--debug")
+        with mock.patch.dict(
+            os.environ,
+            {"CRON_LINEUP_DEBUG": "true", "CRON_LINEUP_DRY_RUN": "true"},
+            clear=False,
+        ):
+            self.assertEqual(cron_create.resolve_lineup_args(), "--debug --dry-run")
+
+    def test_add_match_jobs_passes_lineup_debug_flag(self):
+        jobs = []
+
+        class FakeJob(object):
+            def __init__(self, command, comment):
+                self.command = command
+                self.comment = comment
+                self.hour = mock.Mock()
+                self.minute = mock.Mock()
+
+        def fake_create_job(_cron, command, comment):
+            job = FakeJob(command, comment)
+            jobs.append(job)
+            return job
+
+        match_qs = mock.Mock()
+        match_qs.filter.return_value = match_qs
+        match_qs.order_by.return_value = match_qs
+        match_qs.values_list.return_value = [False]
+        prefix = (
+            "docker compose --project-directory /srv/stacks/tipp_game "
+            "run --rm --no-deps jobs python"
+        )
+        volume = "-v /srv/data/tipp_game/delapphelper.cfg:/app/tools/delapphelper.cfg:ro"
+
+        with mock.patch.dict(
+            os.environ,
+            {
+                "CRON_EXECUTION_PREFIX": prefix,
+                "CRON_LINEUP_DEBUG": "true",
+            },
+            clear=False,
+        ):
+            with mock.patch.object(cron_create.Match, "objects", match_qs):
+                with mock.patch.object(cron_create, "create_job", side_effect=fake_create_job):
+                    cron_create.add_match_jobs(
+                        object(), "/app/tools", 1700000000, 9, cron_create.TIMEZONE
+                    )
+
+        prefix_with_cfg = (
+            "docker compose --project-directory /srv/stacks/tipp_game "
+            "run --rm --no-deps {0} jobs python".format(volume)
+        )
+        lineup = [job for job in jobs if job.comment == cron_create.COMMENT_GET_LINEUP]
+        self.assertEqual(len(lineup), 1)
+        self.assertEqual(
+            lineup[0].command,
+            prefix_with_cfg + " /app/tools/get_lineup.py --debug",
         )
 
     def test_acquire_script_lock_non_blocking(self):
