@@ -41,6 +41,7 @@ SCRIPT_YOWSUP_DMN = "yowsup_dmn.py"
 SCRIPT_LIFE_SCORE = "life_score.py"
 SCRIPT_GET_LINEUP = "get_lineup.py"
 SCRIPT_GET_RANKING = "get_ranking.py"
+SCRIPT_GET_DELGAMES = "get_delgames.py"
 MATCH_IMPORT_ARGS = "--year 2026 --league-id 1"
 GET_RANKING_ARGS = "--year 2026 --table-id 37"
 COMMENT_GRAB_VIDEO = "grab video"
@@ -51,6 +52,7 @@ COMMENT_MATCH_PUMPUP = "send match pumpup"
 COMMENT_LIVE_SCORE = "get live-score"
 COMMENT_GET_LINEUP = "get lineup"
 COMMENT_GET_RANKING = "get del table"
+COMMENT_GET_DELGAMES = "get del results"
 COMMENT_START_MESSENGER = "start messenger"
 COMMENT_STOP_MESSENGER = "stop messenger"
 SCREEN_BIN = "/usr/bin/screen"
@@ -176,6 +178,16 @@ def resolve_ranking_args():
     args = [GET_RANKING_ARGS]
     if _env_flag("CRON_RANKING_DEBUG"):
         args.append("--debug")
+    return " ".join(args)
+
+
+def resolve_delgames_args():
+    """Build optional get_delgames.py flags from environment."""
+    args = []
+    if _env_flag("CRON_DELGAMES_DEBUG"):
+        args.append("--debug")
+    if _env_flag("CRON_DELGAMES_DRY_RUN"):
+        args.append("--dry-run")
     return " ".join(args)
 
 
@@ -489,9 +501,15 @@ def add_match_jobs(cron, script_dir, match_date, match_id, tzone):
         end.hour.on(23)
         end.minute.on(2)
 
-        rank = create_script_job(cron, script_dir, "get_delgames.py", "get del results")
-        rank.hour.on(23)
-        rank.minute.on(1)
+        delgames = create_script_job(
+            cron,
+            script_dir,
+            SCRIPT_GET_DELGAMES,
+            COMMENT_GET_DELGAMES,
+            extra_args=resolve_delgames_args(),
+        )
+        delgames.hour.on(23)
+        delgames.minute.on(1)
 
         add_messenger_jobs(cron, script_dir, match_date, tzone)
 

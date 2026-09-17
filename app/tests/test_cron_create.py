@@ -174,6 +174,12 @@ class CronCreateTests(SimpleTestCase):
         self.assertEqual(len(lineup), 1)
         self.assertEqual(lineup[0].command, "/app/tools/get_lineup.py")
 
+        delgames = [job for job in jobs if job.comment == cron_create.COMMENT_GET_DELGAMES]
+        self.assertEqual(len(delgames), 1)
+        self.assertEqual(delgames[0].command, "/app/tools/get_delgames.py")
+        delgames[0].hour.on.assert_called_once_with(23)
+        delgames[0].minute.on.assert_called_once_with(1)
+
     def test_resolve_delapphelper_run_opts_keeps_volume_flags(self):
         with mock.patch.dict(os.environ, {"CRON_DELAPPHELPER_VOLUME": "-v /cfg:/cfg:ro"}):
             self.assertEqual(cron_create.resolve_delapphelper_run_opts(), "-v /cfg:/cfg:ro")
@@ -261,7 +267,12 @@ class CronCreateTests(SimpleTestCase):
             commands[cron_create.COMMENT_LIVE_SCORE],
             prefix + " /app/tools/life_score.py",
         )
+        self.assertEqual(
+            commands[cron_create.COMMENT_GET_DELGAMES],
+            prefix + " /app/tools/get_delgames.py",
+        )
         self.assertNotIn(volume, commands["create input for tag cloud"])
+        self.assertNotIn(volume, commands[cron_create.COMMENT_GET_DELGAMES])
 
     def test_add_match_jobs_schedules_pumpup_for_no_bet_matches(self):
         jobs = []
@@ -298,6 +309,7 @@ class CronCreateTests(SimpleTestCase):
         self.assertNotIn(cron_create.COMMENT_START_MESSENGER, comments)
         self.assertNotIn(cron_create.COMMENT_STOP_MESSENGER, comments)
         self.assertNotIn(cron_create.COMMENT_GET_LINEUP, comments)
+        self.assertNotIn(cron_create.COMMENT_GET_DELGAMES, comments)
         self.assertIn(cron_create.COMMENT_LIVE_SCORE, comments)
 
     def test_messenger_start_command_uses_execution_prefix(self):
@@ -504,6 +516,65 @@ class CronCreateTests(SimpleTestCase):
         self.assertEqual(
             ranking[0].command,
             prefix_with_cfg + " /app/tools/get_ranking.py --year 2026 --table-id 37 --debug",
+        )
+
+    def test_resolve_delgames_args_from_env(self):
+        with mock.patch.dict(
+            os.environ, {"CRON_DELGAMES_DEBUG": "", "CRON_DELGAMES_DRY_RUN": ""}, clear=False
+        ):
+            self.assertEqual(cron_create.resolve_delgames_args(), "")
+        with mock.patch.dict(os.environ, {"CRON_DELGAMES_DEBUG": "true"}, clear=False):
+            self.assertEqual(cron_create.resolve_delgames_args(), "--debug")
+        with mock.patch.dict(
+            os.environ,
+            {"CRON_DELGAMES_DEBUG": "true", "CRON_DELGAMES_DRY_RUN": "true"},
+            clear=False,
+        ):
+            self.assertEqual(cron_create.resolve_delgames_args(), "--debug --dry-run")
+
+    def test_add_match_jobs_passes_delgames_debug_flag(self):
+        jobs = []
+
+        class FakeJob(object):
+            def __init__(self, command, comment):
+                self.command = command
+                self.comment = comment
+                self.hour = mock.Mock()
+                self.minute = mock.Mock()
+
+        def fake_create_job(_cron, command, comment):
+            job = FakeJob(command, comment)
+            jobs.append(job)
+            return job
+
+        match_qs = mock.Mock()
+        match_qs.filter.return_value = match_qs
+        match_qs.order_by.return_value = match_qs
+        match_qs.values_list.return_value = [False]
+        prefix = (
+            "docker compose --project-directory /srv/stacks/tipp_game "
+            "run --rm --no-deps jobs python"
+        )
+
+        with mock.patch.dict(
+            os.environ,
+            {
+                "CRON_EXECUTION_PREFIX": prefix,
+                "CRON_DELGAMES_DEBUG": "true",
+            },
+            clear=False,
+        ):
+            with mock.patch.object(cron_create.Match, "objects", match_qs):
+                with mock.patch.object(cron_create, "create_job", side_effect=fake_create_job):
+                    cron_create.add_match_jobs(
+                        object(), "/app/tools", 1700000000, 9, cron_create.TIMEZONE
+                    )
+
+        delgames = [job for job in jobs if job.comment == cron_create.COMMENT_GET_DELGAMES]
+        self.assertEqual(len(delgames), 1)
+        self.assertEqual(
+            delgames[0].command,
+            prefix + " /app/tools/get_delgames.py --debug",
         )
 
     def test_acquire_script_lock_non_blocking(self):
