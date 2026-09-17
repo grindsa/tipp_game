@@ -44,10 +44,19 @@ class CronCreateTests(SimpleTestCase):
                 fha.write('old-content')
 
             fake_cron = FakeCron('new-content')
-            cron_create.write_cron_file(fake_cron, out_file, dry_run=False, backup_enabled=True)
+            cron_create.write_cron_file(
+                fake_cron,
+                out_file,
+                dry_run=False,
+                backup_enabled=True,
+                created_at="2026-09-17 09:00:00",
+            )
 
             with open(out_file, 'r') as fha:
-                self.assertEqual(fha.read(), 'new-content')
+                self.assertEqual(
+                    fha.read(),
+                    "# created: 2026-09-17 09:00:00\nnew-content",
+                )
 
             with open(out_file + '.bak', 'r') as fha:
                 self.assertEqual(fha.read(), 'old-content')
@@ -117,6 +126,36 @@ class CronCreateTests(SimpleTestCase):
         self.assertEqual(pumpup[0].command, "/app/tools/match_pumpup.py")
         pumpup[0].hour.on.assert_called_once_with(9)
         pumpup[0].minute.on.assert_called_once_with(30)
+
+        start = [job for job in jobs if job.comment == cron_create.COMMENT_START_MESSENGER]
+        stop = [job for job in jobs if job.comment == cron_create.COMMENT_STOP_MESSENGER]
+        self.assertEqual(len(start), 1)
+        self.assertEqual(len(stop), 1)
+        self.assertEqual(
+            start[0].command,
+            "/usr/bin/screen -dmS yowsupd-screen /app/tools/yowsup_dmn.py",
+        )
+        self.assertEqual(stop[0].command, "/usr/bin/screen -S yowsupd-screen -X quit")
+
+        match_date = 1700000000
+        start_hour, start_minute = cron_create.timestamp_to_hour_minute(
+            match_date - cron_create.MESSENGER_START_BEFORE_SECONDS,
+            cron_create.TIMEZONE,
+        )
+        stop_hour, stop_minute = cron_create.timestamp_to_hour_minute(
+            match_date + cron_create.MESSENGER_STOP_AFTER_SECONDS,
+            cron_create.TIMEZONE,
+        )
+        start[0].hour.on.assert_called_once_with(start_hour)
+        start[0].minute.on.assert_called_once_with(start_minute)
+        stop[0].hour.on.assert_called_once_with(stop_hour)
+        stop[0].minute.on.assert_called_once_with(stop_minute)
+        self.assertLess(
+            match_date - cron_create.MESSENGER_START_BEFORE_SECONDS, match_date
+        )
+        self.assertGreater(
+            match_date + cron_create.MESSENGER_STOP_AFTER_SECONDS, match_date
+        )
 
     def test_resolve_delapphelper_run_opts_keeps_volume_flags(self):
         with mock.patch.dict(os.environ, {"CRON_DELAPPHELPER_VOLUME": "-v /cfg:/cfg:ro"}):
@@ -227,6 +266,26 @@ class CronCreateTests(SimpleTestCase):
         self.assertIn(cron_create.COMMENT_MATCH_PUMPUP, comments)
         self.assertNotIn(cron_create.COMMENT_JOSI_BOT, comments)
         self.assertNotIn(cron_create.COMMENT_HENDRIK_BOT, comments)
+        self.assertNotIn(cron_create.COMMENT_START_MESSENGER, comments)
+        self.assertNotIn(cron_create.COMMENT_STOP_MESSENGER, comments)
+
+    def test_messenger_start_command_uses_execution_prefix(self):
+        prefix = (
+            "docker compose --project-directory /srv/stacks/tipp_game "
+            "run --rm --no-deps jobs python"
+        )
+        with mock.patch.dict(os.environ, {"CRON_EXECUTION_PREFIX": prefix}, clear=False):
+            command = cron_create.build_messenger_start_command("/app/tools")
+        self.assertEqual(
+            command,
+            "/usr/bin/screen -dmS yowsupd-screen {0} /app/tools/yowsup_dmn.py".format(
+                prefix
+            ),
+        )
+        self.assertEqual(
+            cron_create.build_messenger_stop_command(),
+            "/usr/bin/screen -S yowsupd-screen -X quit",
+        )
 
     def test_acquire_script_lock_non_blocking(self):
         with tempfile.TemporaryDirectory() as tmp_dir:

@@ -37,12 +37,19 @@ SCRIPT_LOAD_VIDEO_STREAMS = "load_video_streams.py"
 SCRIPT_MATCH_IMPORT = "match_import.py"
 SCRIPT_TIPP_BOT = "tipp_bot.py"
 SCRIPT_MATCH_PUMPUP = "match_pumpup.py"
+SCRIPT_YOWSUP_DMN = "yowsup_dmn.py"
 MATCH_IMPORT_ARGS = "--year 2026 --league-id 1"
 COMMENT_GRAB_VIDEO = "grab video"
 COMMENT_MATCH_IMPORT = "import upcoming del matches"
 COMMENT_JOSI_BOT = "Josi-Bot"
 COMMENT_HENDRIK_BOT = "Hendrik-Bot"
 COMMENT_MATCH_PUMPUP = "send match pumpup"
+COMMENT_START_MESSENGER = "start messenger"
+COMMENT_STOP_MESSENGER = "stop messenger"
+SCREEN_BIN = "/usr/bin/screen"
+SCREEN_SESSION_YOWSUP = "yowsupd-screen"
+MESSENGER_START_BEFORE_SECONDS = 11460
+MESSENGER_STOP_AFTER_SECONDS = 16200
 DEFAULT_DELAPPHELPER_VOLUME = (
     "/srv/data/tipp_game/delapphelper.cfg:/app/tools/delapphelper.cfg:ro"
 )
@@ -202,6 +209,41 @@ def timestamp_to_hour_minute(timestamp_value, tzone):
         .split(":")
     )
     return int(hour), int(minute)
+
+
+def schedule_job_at_timestamp(job, timestamp_value, tzone):
+    """Set a cron job to a single hour:minute derived from a unix timestamp."""
+    hour, minute = timestamp_to_hour_minute(timestamp_value, tzone)
+    job.hour.on(hour)
+    job.minute.on(minute)
+    return hour, minute
+
+
+def build_messenger_start_command(script_dir):
+    """Build a detached screen command that starts the WhatsApp daemon."""
+    script_path = os.path.join(script_dir, SCRIPT_YOWSUP_DMN)
+    inner = build_command(script_path)
+    return "{0} -dmS {1} {2}".format(SCREEN_BIN, SCREEN_SESSION_YOWSUP, inner)
+
+
+def build_messenger_stop_command():
+    """Build a command that stops the WhatsApp daemon screen session."""
+    return "{0} -S {1} -X quit".format(SCREEN_BIN, SCREEN_SESSION_YOWSUP)
+
+
+def add_messenger_jobs(cron, script_dir, match_date, tzone):
+    """Start the WhatsApp daemon before kickoff and stop it after the match."""
+    start_job = create_job(
+        cron, build_messenger_start_command(script_dir), COMMENT_START_MESSENGER
+    )
+    schedule_job_at_timestamp(
+        start_job, match_date - MESSENGER_START_BEFORE_SECONDS, tzone
+    )
+
+    stop_job = create_job(cron, build_messenger_stop_command(), COMMENT_STOP_MESSENGER)
+    schedule_job_at_timestamp(
+        stop_job, match_date + MESSENGER_STOP_AFTER_SECONDS, tzone
+    )
 
 
 def get_next_match(uts, season_id):
@@ -395,19 +437,7 @@ def add_match_jobs(cron, script_dir, match_date, match_id, tzone):
         rank.hour.on(23)
         rank.minute.on(1)
 
-        hour, minute = timestamp_to_hour_minute(match_date - 11460, tzone)
-        csvc_st = create_job(
-            cron,
-            "/usr/bin/screen -dmS yowsupd-screen /var/www/tipp_game/tools/yowsup_dmn.py",
-            "start messenger",
-        )
-        csvc_st.hour.on(hour)
-        csvc_st.minute.on(minute)
-
-        hour, minute = timestamp_to_hour_minute(match_date - 111160, tzone)
-        csvc_end = create_job(cron, "killall yowsup_dmn.py", "stop messenger")
-        csvc_end.hour.on(hour)
-        csvc_end.minute.on(minute)
+        add_messenger_jobs(cron, script_dir, match_date, tzone)
 
     live = create_script_job(cron, script_dir, "life_score.py", "get live-score")
     live.hour.on(summary_hour)

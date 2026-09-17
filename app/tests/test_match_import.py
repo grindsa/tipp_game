@@ -1,10 +1,10 @@
-import calendar
 import io
 import os
 from contextlib import redirect_stdout
 from datetime import datetime, timezone
 from types import SimpleNamespace
 from unittest import mock
+from zoneinfo import ZoneInfo
 
 from django.test import SimpleTestCase
 
@@ -97,23 +97,41 @@ class MatchImportTests(SimpleTestCase):
             with self.assertRaises(SystemExit):
                 mi.parse_args(["-s", "1", "-t", "2"])
 
-    def test_date_to_uts_utc_from_datetime_and_string(self):
-        dt = datetime(2025, 1, 1, 0, 0, 0)
-        expected = calendar.timegm(dt.timetuple())
-        self.assertEqual(mi.date_to_uts_utc(dt), expected)
-        self.assertEqual(mi.date_to_uts_utc("2025-01-01 00:00:00"), expected)
-
-    def test_date_to_uts_utc_rejects_invalid_string(self):
-        with self.assertRaises(ValueError):
-            mi.date_to_uts_utc("not-a-date")
-
-    def test_start_date_to_uts_handles_placeholder_and_offset(self):
+    def test_start_date_to_uts_handles_placeholders(self):
         self.assertIsNone(mi.start_date_to_uts(None))
         self.assertIsNone(mi.start_date_to_uts(""))
         self.assertIsNone(mi.start_date_to_uts(mi.INVALID_START_DATE))
 
-        uts = mi.start_date_to_uts("2025-01-01 00:00:00")
-        self.assertEqual(uts, calendar.timegm(datetime(2025, 1, 1, 0, 0, 0).timetuple()) - mi.API_TO_UTC_OFFSET_SECONDS)
+    def test_start_date_to_uts_interprets_api_times_in_berlin(self):
+        berlin = ZoneInfo("Europe/Berlin")
+        naive = datetime(2025, 1, 1, 0, 0, 0)
+        expected = int(naive.replace(tzinfo=berlin).timestamp())
+        self.assertEqual(mi.start_date_to_uts("2025-01-01 00:00:00"), expected)
+        self.assertEqual(mi.start_date_to_uts(naive), expected)
+
+    def test_start_date_to_uts_applies_cet_and_cest(self):
+        # 19:30 CEST (UTC+2) -> 17:30 UTC; 19:30 CET (UTC+1) -> 18:30 UTC.
+        summer = mi.start_date_to_uts("2025-07-01 19:30:00")
+        winter = mi.start_date_to_uts("2026-01-15 19:30:00")
+        summer_utc = datetime.fromtimestamp(summer, tz=timezone.utc)
+        winter_utc = datetime.fromtimestamp(winter, tz=timezone.utc)
+        self.assertEqual((summer_utc.hour, summer_utc.minute), (17, 30))
+        self.assertEqual((winter_utc.hour, winter_utc.minute), (18, 30))
+
+        # Last Sunday of October 2025 is the 26th; last Sunday of March 2026 is the 29th.
+        before_fall_back = mi.start_date_to_uts("2025-10-25 19:30:00")
+        after_fall_back = mi.start_date_to_uts("2025-10-26 19:30:00")
+        self.assertEqual(datetime.fromtimestamp(before_fall_back, tz=timezone.utc).hour, 17)
+        self.assertEqual(datetime.fromtimestamp(after_fall_back, tz=timezone.utc).hour, 18)
+
+        before_spring_forward = mi.start_date_to_uts("2026-03-28 19:30:00")
+        after_spring_forward = mi.start_date_to_uts("2026-03-29 19:30:00")
+        self.assertEqual(datetime.fromtimestamp(before_spring_forward, tz=timezone.utc).hour, 18)
+        self.assertEqual(datetime.fromtimestamp(after_spring_forward, tz=timezone.utc).hour, 17)
+
+    def test_start_date_to_uts_rejects_invalid_string(self):
+        with self.assertRaises(ValueError):
+            mi.start_date_to_uts("not-a-date")
 
     def test_lookup_team_by_short_name_and_full_name(self):
         by_short = mi.lookup_team(TEAM_LIST, "EBB")
@@ -155,13 +173,13 @@ class MatchImportTests(SimpleTestCase):
         with self.assertRaises(ValueError):
             mi.resolve_season(9, None, [{"tournament_id": 1}])
 
-    def test_build_match_defaults_applies_stored_date_adjustment(self):
+    def test_build_match_defaults_stores_uts_as_date(self):
         defaults = mi.build_match_defaults(53, 1000, 1, 2, 7, 99)
         self.assertEqual(
             defaults,
             {
                 "matchday": 53,
-                "date": 1000 + mi.STORED_DATE_ADJUSTMENT_SECONDS,
+                "date": 1000,
                 "home_team_id": 1,
                 "guest_team_id": 2,
                 "season_id": 7,

@@ -5,11 +5,11 @@
 from __future__ import absolute_import
 
 import argparse
-import calendar
 import os
 import sys
 from collections import namedtuple
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tipp_game.settings")
@@ -27,9 +27,7 @@ DEFAULT_LEAGUE_ID = 1
 DEFAULT_TEAM_ID = 3
 DEFAULT_SEASON_YEAR = 2026
 DEFAULT_START_MATCHDAY = 52
-# API timestamps are parsed as UTC; subtract 3h, then store with +1h.
-API_TO_UTC_OFFSET_SECONDS = 10800
-STORED_DATE_ADJUSTMENT_SECONDS = 3600
+MATCH_TIMEZONE = ZoneInfo("Europe/Berlin")
 CFG_FILENAME = "delapphelper.cfg"
 
 EXIT_SUCCESS = 0
@@ -58,13 +56,28 @@ def parse_args(argv=None):
     return parser.parse_args(argv)
 
 
-def date_to_uts_utc(date_human, time_format=START_DATE_FORMAT):
-    """Convert a naive datetime or formatted string to a UTC unix timestamp."""
-    if isinstance(date_human, datetime):
-        parsed = date_human
-    else:
-        parsed = datetime.strptime(date_human, time_format)
-    return int(calendar.timegm(parsed.timetuple()))
+def parse_naive_start_date(start_date, time_format=START_DATE_FORMAT):
+    """Parse an API start_date string or datetime into a naive datetime."""
+    if isinstance(start_date, datetime):
+        return start_date
+    return datetime.strptime(start_date, time_format)
+
+
+def start_date_to_uts(start_date, time_format=START_DATE_FORMAT, tzinfo=None):
+    """Convert an API start_date to a UTC unix timestamp.
+
+    DEL start_date values are local wall-clock times in Europe/Berlin.
+    Interpreting them in that zone applies CET/CEST automatically, including
+    the last-Sunday-in-October / last-Sunday-in-March 02:00 switches.
+    """
+    if not start_date or start_date == INVALID_START_DATE:
+        return None
+
+    tzinfo = tzinfo or MATCH_TIMEZONE
+    parsed = parse_naive_start_date(start_date, time_format)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=tzinfo)
+    return int(parsed.timestamp())
 
 
 def uts_now():
@@ -120,13 +133,6 @@ def resolve_season(season_id, tournament_id, season_list):
     return season_id, tournament_id
 
 
-def start_date_to_uts(start_date, time_format=START_DATE_FORMAT):
-    """Convert an API start_date to the unix timestamp used for future checks."""
-    if not start_date or start_date == INVALID_START_DATE:
-        return None
-    return date_to_uts_utc(start_date, time_format) - API_TO_UTC_OFFSET_SECONDS
-
-
 def team_shortcut(match, side):
     """Return a home/guest shortcut from a schedule match dict."""
     side_info = match.get(side) or {}
@@ -137,7 +143,7 @@ def build_match_defaults(matchday, uts, home_team_id, guest_team_id, season_id, 
     """Build the Match.defaults payload for update_or_create."""
     return {
         "matchday": matchday,
-        "date": uts + STORED_DATE_ADJUSTMENT_SECONDS,
+        "date": uts,
         "home_team_id": home_team_id,
         "guest_team_id": guest_team_id,
         "season_id": season_id,
