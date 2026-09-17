@@ -126,7 +126,7 @@ def fairplay_penalties(helper, year, league_id=DEFAULT_LEAGUE_ID):
         penalties[team_id] = minutes
     return penalties
 
-[]
+
 def fetch_standings_table(helper, table_id):
     """Return the standings table list from the DEL app helper."""
     ranking = helper.standings_get(table_id=table_id) or {}
