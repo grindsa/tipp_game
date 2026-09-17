@@ -118,6 +118,83 @@ class CronCreateTests(SimpleTestCase):
         pumpup[0].hour.on.assert_called_once_with(9)
         pumpup[0].minute.on.assert_called_once_with(30)
 
+    def test_resolve_delapphelper_run_opts_keeps_volume_flags(self):
+        with mock.patch.dict(os.environ, {"CRON_DELAPPHELPER_VOLUME": "-v /cfg:/cfg:ro"}):
+            self.assertEqual(cron_create.resolve_delapphelper_run_opts(), "-v /cfg:/cfg:ro")
+        with mock.patch.dict(
+            os.environ, {"CRON_DELAPPHELPER_VOLUME": "--volume /cfg:/cfg:ro"}
+        ):
+            self.assertEqual(
+                cron_create.resolve_delapphelper_run_opts(), "--volume /cfg:/cfg:ro"
+            )
+        with mock.patch.dict(os.environ, {"CRON_DELAPPHELPER_VOLUME": "/cfg:/cfg:ro"}):
+            self.assertEqual(cron_create.resolve_delapphelper_run_opts(), "-v /cfg:/cfg:ro")
+
+    def test_insert_compose_run_opts_before_jobs_service(self):
+        prefix = (
+            "docker compose --project-directory /srv/stacks/tipp_game "
+            "run --rm --no-deps jobs python"
+        )
+        self.assertEqual(
+            cron_create.insert_compose_run_opts(prefix, "-v /cfg:/app/tools/delapphelper.cfg:ro"),
+            "docker compose --project-directory /srv/stacks/tipp_game "
+            "run --rm --no-deps -v /cfg:/app/tools/delapphelper.cfg:ro jobs python",
+        )
+        self.assertEqual(cron_create.insert_compose_run_opts("", "-v /cfg:/cfg"), "")
+
+    def test_delapp_jobs_mount_cfg_when_execution_prefix_is_set(self):
+        jobs = []
+
+        class FakeJob(object):
+            def __init__(self, command, comment):
+                self.command = command
+                self.comment = comment
+                self.hour = mock.Mock()
+                self.minute = mock.Mock()
+
+        def fake_create_job(_cron, command, comment):
+            job = FakeJob(command, comment)
+            jobs.append(job)
+            return job
+
+        prefix = (
+            "docker compose --project-directory /srv/stacks/tipp_game "
+            "run --rm --no-deps jobs python"
+        )
+        volume = "-v /srv/data/tipp_game/delapphelper.cfg:/app/tools/delapphelper.cfg:ro"
+        match_qs = mock.Mock()
+        match_qs.filter.return_value = match_qs
+        match_qs.order_by.return_value = match_qs
+        match_qs.values_list.return_value = [False]
+
+        with mock.patch.dict(os.environ, {"CRON_EXECUTION_PREFIX": prefix}, clear=False):
+            with mock.patch.object(cron_create, "create_job", side_effect=fake_create_job):
+                cron_create.add_baseline_jobs(object(), "/app/tools")
+            with mock.patch.object(cron_create.Match, "objects", match_qs):
+                with mock.patch.object(cron_create, "create_job", side_effect=fake_create_job):
+                    cron_create.add_match_jobs(
+                        object(), "/app/tools", 1700000000, 9, cron_create.TIMEZONE
+                    )
+
+        prefix_with_cfg = (
+            "docker compose --project-directory /srv/stacks/tipp_game "
+            "run --rm --no-deps {0} jobs python".format(volume)
+        )
+        commands = {job.comment: job.command for job in jobs}
+        self.assertEqual(
+            commands[cron_create.COMMENT_MATCH_IMPORT],
+            prefix_with_cfg + " /app/tools/match_import.py --year 2026 --league-id 1",
+        )
+        self.assertEqual(
+            commands[cron_create.COMMENT_MATCH_PUMPUP],
+            prefix_with_cfg + " /app/tools/match_pumpup.py",
+        )
+        self.assertEqual(
+            commands[cron_create.COMMENT_JOSI_BOT],
+            prefix + " /app/tools/tipp_bot.py --profile josi",
+        )
+        self.assertNotIn(volume, commands["create input for tag cloud"])
+
     def test_add_match_jobs_schedules_pumpup_for_no_bet_matches(self):
         jobs = []
 

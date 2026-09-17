@@ -43,6 +43,9 @@ COMMENT_MATCH_IMPORT = "import upcoming del matches"
 COMMENT_JOSI_BOT = "Josi-Bot"
 COMMENT_HENDRIK_BOT = "Hendrik-Bot"
 COMMENT_MATCH_PUMPUP = "send match pumpup"
+DEFAULT_DELAPPHELPER_VOLUME = (
+    "/srv/data/tipp_game/delapphelper.cfg:/app/tools/delapphelper.cfg:ro"
+)
 
 EXIT_SUCCESS = 0
 EXIT_RUNTIME_ERROR = 1
@@ -60,10 +63,39 @@ def resolve_cron_filename():
     return os.path.join(target_dir, target_file)
 
 
-def build_command(script_path, extra_args=""):
+def resolve_delapphelper_run_opts():
+    """Return docker compose run options that mount delapphelper.cfg."""
+    if "CRON_DELAPPHELPER_VOLUME" in os.environ:
+        volume = os.environ.get("CRON_DELAPPHELPER_VOLUME", "").strip()
+    else:
+        volume = DEFAULT_DELAPPHELPER_VOLUME
+    if not volume:
+        return ""
+    if volume.startswith(("-v ", "--volume ")):
+        return volume
+    return "-v {0}".format(volume)
+
+
+def insert_compose_run_opts(prefix, run_opts):
+    """Insert extra `docker compose run` options before the service name."""
+    if not prefix or not run_opts:
+        return prefix
+    opts = run_opts.strip()
+    parts = prefix.split()
+    try:
+        jobs_at = parts.index("jobs")
+    except ValueError:
+        return "{0} {1}".format(prefix.rstrip(), opts)
+    parts.insert(jobs_at, opts)
+    return " ".join(parts)
+
+
+def build_command(script_path, extra_args="", mount_delapp_cfg=False):
     """Build command string for generated cron entries."""
     prefix = os.environ.get("CRON_EXECUTION_PREFIX", "").strip()
     suffix = (" " + extra_args.strip()) if extra_args else ""
+    if mount_delapp_cfg:
+        prefix = insert_compose_run_opts(prefix, resolve_delapphelper_run_opts())
     if prefix:
         return "{0} {1}{2}".format(prefix, script_path, suffix)
     return "{0}{1}".format(script_path, suffix)
@@ -151,10 +183,14 @@ def create_job(cron, command, comment):
     return cron.new(command=command, comment=comment)
 
 
-def create_script_job(cron, script_dir, script_name, comment, extra_args=""):
+def create_script_job(
+    cron, script_dir, script_name, comment, extra_args="", mount_delapp_cfg=False
+):
     """Create a cron job for a script in the tools directory."""
     script_path = os.path.join(script_dir, script_name)
-    command = build_command(script_path, extra_args)
+    command = build_command(
+        script_path, extra_args, mount_delapp_cfg=mount_delapp_cfg
+    )
     return create_job(cron, command, comment)
 
 
@@ -252,6 +288,7 @@ def add_baseline_jobs(cron, script_dir):
         SCRIPT_MATCH_IMPORT,
         COMMENT_MATCH_IMPORT,
         MATCH_IMPORT_ARGS,
+        mount_delapp_cfg=True,
     )
     mimport.hour.on(5)
     mimport.minute.on(15)
@@ -378,7 +415,11 @@ def add_match_jobs(cron, script_dir, match_date, match_id, tzone):
     live.minute.every(1)
 
     pumpup = create_script_job(
-        cron, script_dir, SCRIPT_MATCH_PUMPUP, COMMENT_MATCH_PUMPUP
+        cron,
+        script_dir,
+        SCRIPT_MATCH_PUMPUP,
+        COMMENT_MATCH_PUMPUP,
+        mount_delapp_cfg=True,
     )
     pumpup.hour.on(9)
     pumpup.minute.on(30)
