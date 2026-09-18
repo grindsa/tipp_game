@@ -17,7 +17,6 @@ try:
     from ics import Calendar, Event
 except BaseException:
     from icalendar import Calendar, Event
-from bs4 import BeautifulSoup
 from pytz import timezone
 from django.contrib.auth import models
 from django.contrib.auth.models import Group, User
@@ -306,13 +305,13 @@ def get_matches(request, u_season_id):
             match['ggoal'] = ggoal
 
         # add radio link
-        rl_url = add_rl_url(int(match['guest_team_id']), team_list, ebb_id)
+        rl_url = _add_rl_url(int(match['guest_team_id']), team_list, ebb_id)
         if rl_url:
             match['url'] = rl_url
 
     return match_list
 
-def add_rl_url(rl_id, team_list, _ebb_id):
+def _add_rl_url(rl_id, team_list, _ebb_id):
     """ add r 1 rul """
     url = None
     for team in team_list:
@@ -590,7 +589,7 @@ def get_tipstats(u_season_id, group_filter, match_id, bad_tip, team_filter, delt
         rl_number = 1
 
     # sort score_dic
-    score_list = sort_score(score_dict, user_dict)
+    score_list = _sort_score(score_dict, user_dict)
 
     # flag user with red lantern if we need to do so
     if  rl_number != 0:
@@ -604,7 +603,7 @@ def get_tipstats(u_season_id, group_filter, match_id, bad_tip, team_filter, delt
         # o_score_list = []
         # for key, _val in sorted(list(o_score_dict.items()), key=lambda x: x[1], reverse=True):
         #     o_score_list.append(key)
-        o_score_list = sort_score(o_score_dict, user_dict)
+        o_score_list = _sort_score(o_score_dict, user_dict)
 
         count = 0
         for ele in score_list:
@@ -618,7 +617,7 @@ def get_tipstats(u_season_id, group_filter, match_id, bad_tip, team_filter, delt
                     user_dict[ele]['alwd'] = (o_score_list.index(ele) + 1 - count)
     return(score_dict, user_dict, score_list)
 
-def sort_score(score_dict, new_user_dict):
+def _sort_score(score_dict, new_user_dict):
     """ sort score """
     # copy user_dict (just to be save)
     # new_user_dict = user_dict.copy()
@@ -1100,7 +1099,7 @@ def parse_message(body, sender, source, message_uts):
                     hscore = None
                     gscore = None
                 if hscore and gscore:
-                    message = yao_send(hscore, gscore, match_id, group[0])
+                    message = _yao_send(hscore, gscore, match_id, group[0])
         else:
             message = 'Es läuft gerade kein Spiel...'
     elif('estzeit' in fword or 'ie lange' in body or fword == 'Dauer?' or fword == 'dauer?'):
@@ -1395,7 +1394,7 @@ def parse_location(user_latitude, user_longitude, sender):
 
     return(reply, message)
 
-def yao_send(h_score, g_score, match_id, g_name):
+def _yao_send(h_score, g_score, match_id, g_name):
     """ you are out message """
     # get users per group
     user_dic = {}
@@ -1773,7 +1772,7 @@ def get_winloss(home_team_id, team_id, result):
 
     return(result, detail, goal, ggoal)
 
-def avg_list_calculate(_list):
+def _avg_list_calculate(_list):
     """ calculate avg list """
     avg_list = []
     for ele in range(1, len(_list)+1):
@@ -1854,8 +1853,8 @@ def create_kye_charts(request, match_dic, oteam_id):
                 team_name_long = match_dic[match]['home_team__team_name']
                 glg = glg + 1
 
-    avg_goal_list = avg_list_calculate(goal_list)
-    avg_ggoal_list = avg_list_calculate(ggoal_list)
+    avg_goal_list = _avg_list_calculate(goal_list)
+    avg_ggoal_list = _avg_list_calculate(ggoal_list)
 
     pie_data = [
         {
@@ -2465,14 +2464,6 @@ def shorten_lineup(string):
 
     return ' - '.join(tmp_list)
 
-def modify_umlaut(string):
-    """ modify umlaut to html """
-    string.replace('&auml;', 'ä')
-    string = string.replace('&ouml;', 'ö')
-    string = string.replace('&uuml;', 'ü')
-    string = string.replace('&szlig;', 'ß')
-    return string
-
 def get_visitor_stats(request, season_id):
     """ get visitor stats """
     # whats the id of best german hockey team
@@ -2556,11 +2547,11 @@ def get_visitor_stats(request, season_id):
             _sum += visitor['number']
             visitor_dic[visitor['match']]['avg'] = int(_sum/cnt)
 
-    visitor_chart = get_visitor_chart(request, visitor_dic, season_name, oseason_name, average, oaverage)
+    visitor_chart = _get_visitor_chart(request, visitor_dic, season_name, oseason_name, average, oaverage)
 
     return(visitor_dic, visitor_chart)
 
-def get_visitor_chart(request, visitor_dic, season_name, oseason_name, average, oaverage):
+def _get_visitor_chart(request, visitor_dic, season_name, oseason_name, average, oaverage):
     """ get visitor chart """
     mday_list = []
     visitor_list = []
@@ -2776,19 +2767,6 @@ def get_h2h_statistics(team_filter):
 
     return(matches, wins, losses, ot_wins, ot_losses, ps_wins, ps_losses)
 
-def get_te_stats(url):
-    """ get player and team statistics from DEL page """
-
-    print(url)
-    player_stat_dic = {}
-
-    fobj = urlopen(url)
-    html = fobj.read()
-    soup = BeautifulSoup(html, 'lxml')
-
-
-    return(player_stat_dic)
-
 def print_debug(debug, text):
     """ little helper to print debug messages
         args:
@@ -2947,11 +2925,11 @@ def validate_tip(season_id, match_id, tip, user_id, user_name, user_groups):
     """ additional group specific tip validation  """
 
     # oma tip check
-    error = check_oma_tip(season_id, match_id, tip, user_id, user_name, user_groups)
+    error = _check_oma_tip(season_id, match_id, tip, user_id, user_name, user_groups)
 
     return error
 
-def check_oma_tip(season_id, match_id, tip, user_id, _user_name, user_groups):
+def _check_oma_tip(season_id, match_id, tip, user_id, _user_name, user_groups):
     """ check oma tip """
     # get list of group_ids
     group_id_list = list(user_groups.keys())
@@ -3023,11 +3001,11 @@ def get_playoff_list(u_season_id):
 
         # sort playoff_list ccording to results
         if playoff_list:
-            playoff_list = sort_playoff_list(playoff_list)
+            playoff_list = _sort_playoff_list(playoff_list)
 
     return playoff_list
 
-def sort_playoff_list(playoff_list):
+def _sort_playoff_list(playoff_list):
     """ sort playoff list more or less successfull"""
 
     idx_dic = {1: []}
