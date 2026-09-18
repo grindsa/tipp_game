@@ -26,7 +26,7 @@ except ImportError:
     from game.wa_hack_cli import simple_send
 
 CFG_FILENAME = "delapphelper.cfg"
-DEFAULT_TABLE_ID = 37
+DEFAULT_TABLE_ID = 44
 DEFAULT_FAIRPLAY_YEAR = 2026
 DEFAULT_LEAGUE_ID = 1
 RANKING_TYPE = "all"
@@ -69,6 +69,11 @@ def parse_args(argv=None):
         help="DEL season year used for the fairplay ranking (default: {0}).".format(
             DEFAULT_FAIRPLAY_YEAR
         ),
+    )
+    parser.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Print the admin WhatsApp message instead of sending it.",
     )
     return parser.parse_args(argv)
 
@@ -196,9 +201,15 @@ def within_notify_window(now_uts, match_date, window=NOTIFY_WINDOW_SECONDS):
     return int(now_uts) < int(match_date) + window
 
 
-def notify_admin(message, settings_obj, send_fn=None):
-    """Send the ranking summary to the WhatsApp admin number."""
-    if not message or not whatsapp_configured(settings_obj):
+def notify_admin(message, settings_obj, send_fn=None, dry_run=False):
+    """Send the ranking summary to the WhatsApp admin number, or print it."""
+    if not message:
+        return False
+    if dry_run:
+        recipient = getattr(settings_obj, "WA_ADMIN_NUMBER", None) or "WA_ADMIN_NUMBER"
+        print("dry-run whatsapp {0}:\n{1}".format(recipient, message))
+        return True
+    if not whatsapp_configured(settings_obj):
         return False
     sender = send_fn or simple_send
     sender(
@@ -301,11 +312,14 @@ def run(
         ranking_model=ranking_model,
     )
 
-    if whatsapp_configured(settings_obj) and within_notify_window(now_uts, match_date):
+    if args.dry_run or (
+        whatsapp_configured(settings_obj) and within_notify_window(now_uts, match_date)
+    ):
         notify_admin(
             format_admin_message(match_day, ranking_lines),
             settings_obj,
             send_fn=send_fn,
+            dry_run=args.dry_run,
         )
     return ranking_lines
 

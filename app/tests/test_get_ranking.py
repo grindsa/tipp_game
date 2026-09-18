@@ -98,6 +98,7 @@ class GetRankingTests(SimpleTestCase):
         self.assertIsNone(args.season_id)
         self.assertEqual(args.table_id, gr.DEFAULT_TABLE_ID)
         self.assertEqual(args.year, gr.DEFAULT_FAIRPLAY_YEAR)
+        self.assertFalse(args.dry_run)
 
     def test_parse_args_reads_flags(self):
         args = gr.parse_args(
@@ -108,6 +109,7 @@ class GetRankingTests(SimpleTestCase):
         self.assertEqual(args.table_id, 12)
         self.assertEqual(args.year, 2026)
         self.assertTrue(gr.parse_args(["--debug"]).debug)
+        self.assertTrue(gr.parse_args(["--dry-run"]).dry_run)
 
     def test_load_season_id_counts_season_rows(self):
         class SeasonModel(object):
@@ -234,6 +236,48 @@ class GetRankingTests(SimpleTestCase):
         self.assertEqual(len(sent), 1)
         self.assertEqual(sent[0][2], SETTINGS.WA_ADMIN_NUMBER)
         self.assertIn("8.Spieltag", sent[0][3])
+
+    def test_run_dry_run_prints_and_skips_send(self):
+        helper = FakeDelAppHelper(
+            table=[_standing(11, "Eisbaeren Berlin", 1)],
+        )
+        fake_ranking = FakeRanking()
+        sent = []
+        output = io.StringIO()
+        with redirect_stdout(output):
+            lines = gr.run(
+                argv=["--dry-run", "--season-id", "5"],
+                now_uts=200,
+                teams=TEAM_LIST,
+                last_match=(55, 150, 8),
+                helper_factory=lambda debug, cfg_file=None: helper,
+                ranking_model=fake_ranking,
+                lookup_fn=_lookup,
+                settings_obj=SETTINGS,
+                send_fn=lambda *args: sent.append(args),
+            )
+        self.assertEqual(lines, ["1: EBB - Eisbaeren Berlin"])
+        self.assertEqual(len(fake_ranking.objects.calls), 1)
+        self.assertEqual(sent, [])
+        printed = output.getvalue()
+        self.assertIn("dry-run whatsapp {0}:".format(SETTINGS.WA_ADMIN_NUMBER), printed)
+        self.assertIn("8.Spieltag", printed)
+        self.assertIn("1: EBB - Eisbaeren Berlin", printed)
+
+    def test_notify_admin_dry_run_prints_without_whatsapp_settings(self):
+        sent = []
+        output = io.StringIO()
+        with redirect_stdout(output):
+            sent_flag = gr.notify_admin(
+                "hello",
+                SimpleNamespace(),
+                send_fn=lambda *args: sent.append(args),
+                dry_run=True,
+            )
+        self.assertTrue(sent_flag)
+        self.assertEqual(sent, [])
+        self.assertIn("dry-run whatsapp WA_ADMIN_NUMBER:", output.getvalue())
+        self.assertIn("hello", output.getvalue())
 
     def test_run_skips_persist_without_matchday_and_skips_stale_notify(self):
         helper = FakeDelAppHelper(table=[_standing(11, "Eisbaeren Berlin", 1)])
