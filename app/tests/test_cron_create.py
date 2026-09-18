@@ -180,6 +180,12 @@ class CronCreateTests(SimpleTestCase):
         delgames[0].hour.on.assert_called_once_with(23)
         delgames[0].minute.on.assert_called_once_with(1)
 
+        liverank = [job for job in jobs if job.comment == cron_create.COMMENT_GET_LIFE_RANKING]
+        self.assertEqual(len(liverank), 1)
+        self.assertEqual(liverank[0].command, "/app/tools/get_life_ranking.py")
+        liverank[0].hour.during.assert_called_once_with(13, 22)
+        liverank[0].minute.every.assert_called_once_with(5)
+
     def test_resolve_delapphelper_run_opts_keeps_volume_flags(self):
         with mock.patch.dict(os.environ, {"CRON_DELAPPHELPER_VOLUME": "-v /cfg:/cfg:ro"}):
             self.assertEqual(cron_create.resolve_delapphelper_run_opts(), "-v /cfg:/cfg:ro")
@@ -576,6 +582,74 @@ class CronCreateTests(SimpleTestCase):
             delgames[0].command,
             prefix + " /app/tools/get_delgames.py --debug",
         )
+
+    def test_resolve_life_ranking_args_from_env(self):
+        with mock.patch.dict(
+            os.environ,
+            {"CRON_LIFE_RANKING_DEBUG": "", "CRON_LIFE_RANKING_DRY_RUN": ""},
+            clear=False,
+        ):
+            self.assertEqual(cron_create.resolve_life_ranking_args(), "")
+        with mock.patch.dict(os.environ, {"CRON_LIFE_RANKING_DEBUG": "true"}, clear=False):
+            self.assertEqual(cron_create.resolve_life_ranking_args(), "--debug")
+        with mock.patch.dict(
+            os.environ,
+            {"CRON_LIFE_RANKING_DEBUG": "true", "CRON_LIFE_RANKING_DRY_RUN": "true"},
+            clear=False,
+        ):
+            self.assertEqual(
+                cron_create.resolve_life_ranking_args(), "--debug --dry-run"
+            )
+
+    def test_add_match_jobs_passes_life_ranking_flags(self):
+        jobs = []
+
+        class FakeJob(object):
+            def __init__(self, command, comment):
+                self.command = command
+                self.comment = comment
+                self.hour = mock.Mock()
+                self.minute = mock.Mock()
+
+        def fake_create_job(_cron, command, comment):
+            job = FakeJob(command, comment)
+            jobs.append(job)
+            return job
+
+        match_qs = mock.Mock()
+        match_qs.filter.return_value = match_qs
+        match_qs.order_by.return_value = match_qs
+        match_qs.values_list.return_value = [False]
+        prefix = (
+            "docker compose --project-directory /srv/stacks/tipp_game "
+            "run --rm --no-deps jobs python"
+        )
+
+        with mock.patch.dict(
+            os.environ,
+            {
+                "CRON_EXECUTION_PREFIX": prefix,
+                "CRON_LIFE_RANKING_DEBUG": "true",
+                "CRON_LIFE_RANKING_DRY_RUN": "true",
+            },
+            clear=False,
+        ):
+            with mock.patch.object(cron_create.Match, "objects", match_qs):
+                with mock.patch.object(cron_create, "create_job", side_effect=fake_create_job):
+                    cron_create.add_match_jobs(
+                        object(), "/app/tools", 1700000000, 9, cron_create.TIMEZONE
+                    )
+
+        liverank = [
+            job for job in jobs if job.comment == cron_create.COMMENT_GET_LIFE_RANKING
+        ]
+        self.assertEqual(len(liverank), 1)
+        self.assertEqual(
+            liverank[0].command,
+            prefix + " /app/tools/get_life_ranking.py --debug --dry-run",
+        )
+        liverank[0].hour.during.assert_called_once_with(13, 22)
+        liverank[0].minute.every.assert_called_once_with(5)
 
     def test_acquire_script_lock_non_blocking(self):
         with tempfile.TemporaryDirectory() as tmp_dir:

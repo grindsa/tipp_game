@@ -42,6 +42,7 @@ SCRIPT_LIFE_SCORE = "life_score.py"
 SCRIPT_GET_LINEUP = "get_lineup.py"
 SCRIPT_GET_RANKING = "get_ranking.py"
 SCRIPT_GET_DELGAMES = "get_delgames.py"
+SCRIPT_GET_LIFE_RANKING = "get_life_ranking.py"
 MATCH_IMPORT_ARGS = "--year 2026 --league-id 1"
 GET_RANKING_ARGS = "--year 2026 --table-id 44"
 COMMENT_GRAB_VIDEO = "grab video"
@@ -53,6 +54,7 @@ COMMENT_LIVE_SCORE = "get live-score"
 COMMENT_GET_LINEUP = "get lineup"
 COMMENT_GET_RANKING = "get del table"
 COMMENT_GET_DELGAMES = "get del results"
+COMMENT_GET_LIFE_RANKING = "get blitztabelle"
 COMMENT_START_MESSENGER = "start messenger"
 COMMENT_STOP_MESSENGER = "stop messenger"
 SCREEN_BIN = "/usr/bin/screen"
@@ -187,6 +189,16 @@ def resolve_delgames_args():
     if _env_flag("CRON_DELGAMES_DEBUG"):
         args.append("--debug")
     if _env_flag("CRON_DELGAMES_DRY_RUN"):
+        args.append("--dry-run")
+    return " ".join(args)
+
+
+def resolve_life_ranking_args():
+    """Build optional get_life_ranking.py flags from environment."""
+    args = []
+    if _env_flag("CRON_LIFE_RANKING_DEBUG"):
+        args.append("--debug")
+    if _env_flag("CRON_LIFE_RANKING_DRY_RUN"):
         args.append("--dry-run")
     return " ".join(args)
 
@@ -478,7 +490,11 @@ def add_match_jobs(cron, script_dir, match_date, match_id, tzone):
         omatip.minute.on(31)
 
         liverank = create_script_job(
-            cron, script_dir, "get_life_ranking.py", "get blitztabelle"
+            cron,
+            script_dir,
+            SCRIPT_GET_LIFE_RANKING,
+            COMMENT_GET_LIFE_RANKING,
+            extra_args=resolve_life_ranking_args(),
         )
         liverank.hour.during(13, 22)
         liverank.minute.every(5)
