@@ -1,4 +1,5 @@
 import io
+import os
 from contextlib import redirect_stdout
 from types import SimpleNamespace
 from unittest import mock
@@ -9,6 +10,7 @@ from tools import life_score as ls
 
 
 SETTINGS = SimpleNamespace(
+    WA_ADMIN_NUMBER="491700000000",
     WA_SRV="wa.local",
     WA_PORT=9009,
     TR_ID="*ABCD",
@@ -69,7 +71,10 @@ class LifeScoreTests(SimpleTestCase):
         self.assertTrue(args.fake_breaktr)
         self.assertTrue(ls.parse_args(["-f"]).fake_breaktr)
         self.assertFalse(defaults.dry_run)
+        self.assertFalse(defaults.reroute)
         self.assertTrue(ls.parse_args(["--dry-run"]).dry_run)
+        self.assertTrue(ls.parse_args(["-r"]).reroute)
+        self.assertTrue(ls.parse_args(["--reroute"]).reroute)
 
     def test_resolve_thresholds_for_normal_and_fake_breaktr(self):
         self.assertEqual(
@@ -85,6 +90,25 @@ class LifeScoreTests(SimpleTestCase):
         self.assertTrue(ls.match_is_too_old(2000, 1000, 500))
         self.assertFalse(ls.match_is_too_old(2000, 1000, 2000))
         self.assertTrue(ls.match_is_too_old(100, None, 10))
+
+    def test_format_match_datetime(self):
+        self.assertIsNone(ls.format_match_datetime(None))
+        self.assertEqual(
+            ls.format_match_datetime(1726644720),
+            "2024-09-18 09:32",
+        )
+
+    def test_fetch_json_uses_requests(self):
+        payload = {"events": []}
+        response = mock.Mock()
+        response.json.return_value = payload
+        get_fn = mock.Mock(return_value=response)
+        result = ls.fetch_json("https://example.test/ticker", get_fn=get_fn)
+        get_fn.assert_called_once_with(
+            "https://example.test/ticker", timeout=ls.HTTP_TIMEOUT_SECONDS
+        )
+        response.raise_for_status.assert_called_once()
+        self.assertEqual(result, payload)
 
     def test_is_home_match_and_first_run_and_break(self):
         self.assertTrue(ls.is_home_match("EBB"))
@@ -413,12 +437,17 @@ class LifeScoreTests(SimpleTestCase):
         with mock.patch.object(ls, "run", return_value=ls.EXIT_SUCCESS) as run_fn:
             self.assertEqual(ls.main([]), ls.EXIT_SUCCESS)
             run_fn.assert_called_once_with(
-                debug=False, fake_breaktr=False, dry_run=False
+                debug=False, fake_breaktr=False, dry_run=False, reroute=False
             )
         with mock.patch.object(ls, "run", return_value=ls.EXIT_SUCCESS) as run_fn:
             self.assertEqual(ls.main(["-d", "--dry-run", "-f"]), ls.EXIT_SUCCESS)
             run_fn.assert_called_once_with(
-                debug=True, fake_breaktr=True, dry_run=True
+                debug=True, fake_breaktr=True, dry_run=True, reroute=False
+            )
+        with mock.patch.object(ls, "run", return_value=ls.EXIT_SUCCESS) as run_fn:
+            self.assertEqual(ls.main(["-r"]), ls.EXIT_SUCCESS)
+            run_fn.assert_called_once_with(
+                debug=False, fake_breaktr=False, dry_run=False, reroute=True
             )
 
     def test_dispatch_whatsapp_and_threema_dry_run_skip_send(self):
@@ -498,6 +527,62 @@ class LifeScoreTests(SimpleTestCase):
         self.assertIn("Das Spiel hat begonnen", printed)
         self.assertIn("dry-run threema DBUF47V8:", printed)
 
+    def test_send_yao_reroute_sends_to_admin_number(self):
+        class FakeQuerySet(object):
+            def __init__(self, rows):
+                self.rows = list(rows)
+
+            def filter(self, **_kwargs):
+                return self
+
+            def values(self, *_args, **_kwargs):
+                return list(self.rows)
+
+            def values_list(self, *_args, **_kwargs):
+                if _args:
+                    key = _args[0]
+                    return [
+                        row[key] if isinstance(row, dict) else row for row in self.rows
+                    ]
+                return list(self.rows)
+
+        class FakeModel(object):
+            def __init__(self, rows):
+                self.objects = FakeQuerySet(rows)
+
+        wa_send = mock.Mock()
+        tr_send = mock.Mock()
+        with mock.patch.dict(os.environ, {"WA_ADMIN_NUMBER": ""}, clear=False):
+            ls.send_yao(
+                None,
+                0,
+                0,
+                9,
+                None,
+                match_start=True,
+                settings_obj=SETTINGS,
+                group_model=FakeModel(
+                    [
+                        {
+                            "number": "111",
+                            "group_id": 1,
+                            "group__name": "tipp",
+                            "yao_message": False,
+                            "alert": True,
+                        }
+                    ]
+                ),
+                user_model=FakeModel([{"username": "alice", "id": 1}]),
+                usersetting_model=FakeModel(["DBUF47V8"]),
+                tip_model=FakeModel([]),
+                wa_send_fn=wa_send,
+                threema_send_fn=tr_send,
+                sleep_fn=mock.Mock(),
+                reroute=True,
+            )
+        wa_send.assert_called_once_with("wa.local", 9009, SETTINGS.WA_ADMIN_NUMBER, mock.ANY)
+        tr_send.assert_called_once()
+
     def test_send_alert_dry_run_prints_and_skips_send(self):
         class FakeQuerySet(object):
             def __init__(self, rows):
@@ -560,6 +645,73 @@ class LifeScoreTests(SimpleTestCase):
         self.assertIn("dry-run whatsapp 111:", printed)
         self.assertIn("1. Drittel beendet", printed)
         self.assertIn("dry-run threema DBUF47V8:", printed)
+
+    def test_send_alert_reroute_sends_to_admin_number(self):
+        class FakeQuerySet(object):
+            def __init__(self, rows):
+                self.rows = list(rows)
+
+            def filter(self, **_kwargs):
+                return self
+
+            def values(self, *_args, **_kwargs):
+                return list(self.rows)
+
+            def values_list(self, *_args, **_kwargs):
+                if _args:
+                    key = _args[0]
+                    return [
+                        row[key] if isinstance(row, dict) else row for row in self.rows
+                    ]
+                return list(self.rows)
+
+            def __getitem__(self, key):
+                return self.rows[key]
+
+        class FakeModel(object):
+            def __init__(self, rows):
+                self.objects = FakeQuerySet(rows)
+
+        wa_send = mock.Mock()
+        tr_send = mock.Mock()
+        with mock.patch.dict(os.environ, {"WA_ADMIN_NUMBER": "499988877766"}, clear=False):
+            ls.send_alert(
+                9,
+                "1. Drittel beendet. Zwischenstand: 1:0",
+                "1:0",
+                settings_obj=SETTINGS,
+                group_model=FakeModel(
+                    [
+                        {
+                            "number": "111",
+                            "group_id": 1,
+                            "group__name": "tipp",
+                            "alert": True,
+                        }
+                    ]
+                ),
+                user_model=FakeModel([{"username": "alice", "id": 1}]),
+                usersetting_model=FakeModel(["DBUF47V8"]),
+                tip_model=FakeModel([]),
+                match_model=FakeModel([{"no_bet": False}]),
+                wa_send_fn=wa_send,
+                threema_send_fn=tr_send,
+                sleep_fn=mock.Mock(),
+                reroute=True,
+            )
+        wa_send.assert_called_once_with("wa.local", 9009, "499988877766", mock.ANY)
+        tr_send.assert_called_once()
+
+    def test_resolve_whatsapp_recipient_requires_admin_number(self):
+        incomplete = SimpleNamespace(WA_SRV="wa.local", WA_PORT=9009)
+        with mock.patch.dict(os.environ, {"WA_ADMIN_NUMBER": ""}, clear=False):
+            with self.assertRaises(RuntimeError) as raised:
+                ls.resolve_whatsapp_recipient(incomplete, "111", reroute=True)
+        self.assertIn("WA_ADMIN_NUMBER", str(raised.exception))
+        self.assertEqual(
+            ls.resolve_whatsapp_recipient(SETTINGS, "+111", reroute=False),
+            "111",
+        )
 
     def test_build_endgame_ranking_appends_points(self):
         users = [{"username": "alice"}, {"username": "bob"}]

@@ -6,13 +6,14 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 import argparse
-import json
+import datetime
 import os
 import sys
 import time
 from collections import namedtuple
 from functools import partial
-from urllib.request import urlopen
+
+import requests
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tipp_game.settings")
@@ -23,6 +24,7 @@ django.setup()
 
 from django.conf import settings
 from django.contrib.auth.models import User
+from pytz import timezone
 from game.models import Goal, Groupsetting, Match, Playerstatebb, Season, Tip, Usersetting
 from game.myfunctions import get_last_match, get_score, print_debug, send_threema, sort_dic
 
@@ -35,6 +37,7 @@ TICKER_URL = "https://app.eisbaeren.de/index.php?r=output%2Fliveticker"
 PLAYER_URL = "https://app.eisbaeren.de/index.php?r=output%2Fplayer"
 GAMESTATS_URL = "http://tippspiel.dynamop.de/game/gamestats"
 EBB_SHORT_NAME = "EBB"
+MATCH_TZ = timezone("Europe/Berlin")
 
 MATCH_MAX_AGE_SECONDS = 43200
 FAKE_BREAKTR_MATCH_MAX_AGE_SECONDS = 1443200
@@ -90,6 +93,12 @@ def parse_args(argv=None):
         action="store_true",
         help="Print generated messages instead of sending WhatsApp/Threema.",
     )
+    parser.add_argument(
+        "-r",
+        "--reroute",
+        action="store_true",
+        help="Send WhatsApp messages to WA_ADMIN_NUMBER instead of configured groups.",
+    )
     return parser.parse_args(argv)
 
 
@@ -111,6 +120,16 @@ def match_is_too_old(now_uts, match_date, max_age_seconds):
     if match_date is None:
         return True
     return max_age_seconds < int(now_uts) - int(match_date)
+
+
+def format_match_datetime(match_date, tz=None):
+    """Format a unix timestamp as YYYY-MM-DD HH:MM in match local time."""
+    if match_date is None:
+        return None
+    tz = tz or MATCH_TZ
+    return datetime.datetime.fromtimestamp(int(match_date), tz=tz).strftime(
+        "%Y-%m-%d %H:%M"
+    )
 
 
 def is_home_match(home_team):
@@ -174,13 +193,12 @@ def parse_period_number(num):
     return int(str(num).rstrip("."))
 
 
-def fetch_json(url, timeout=HTTP_TIMEOUT_SECONDS):
+def fetch_json(url, timeout=HTTP_TIMEOUT_SECONDS, get_fn=None):
     """Fetch and decode a JSON payload."""
-    with urlopen(url, timeout=timeout) as response:
-        payload = response.read()
-    if isinstance(payload, bytes):
-        payload = payload.decode("utf-8")
-    return json.loads(payload)
+    getter = get_fn or requests.get
+    response = getter(url, timeout=timeout)
+    response.raise_for_status()
+    return response.json()
 
 
 def sort_ticker_events(events):
@@ -489,6 +507,30 @@ def has_whatsapp_settings(settings_obj):
     return hasattr(settings_obj, "WA_SRV") and hasattr(settings_obj, "WA_PORT")
 
 
+def admin_whatsapp_number(settings_obj=None):
+    """Return WA_ADMIN_NUMBER from the environment or Django settings."""
+    number = os.environ.get("WA_ADMIN_NUMBER", "").strip()
+    if number:
+        return number
+    if settings_obj is not None:
+        number = getattr(settings_obj, "WA_ADMIN_NUMBER", None)
+        if number:
+            return str(number).strip()
+    return ""
+
+
+def resolve_whatsapp_recipient(settings_obj, number, reroute=False):
+    """Return the WhatsApp destination, optionally replaced by WA_ADMIN_NUMBER."""
+    if reroute:
+        admin = admin_whatsapp_number(settings_obj)
+        if not admin:
+            raise RuntimeError(
+                "WA_ADMIN_NUMBER is not set; cannot reroute WhatsApp messages"
+            )
+        return admin
+    return (number or "").lstrip("+")
+
+
 def has_threema_settings(settings_obj, require_key=True):
     """Return True when Threema transport settings are present."""
     if not (
@@ -544,6 +586,7 @@ def send_yao(
     threema_send_fn=None,
     sleep_fn=None,
     dry_run=False,
+    reroute=False,
 ):
     """Notify groups about kickoff or a goal, including you-are-out status."""
     settings_obj = settings_obj or settings
@@ -563,7 +606,9 @@ def send_yao(
         if not (group["yao_message"] or group["alert"]):
             continue
 
-        number = (group["number"] or "").lstrip("+")
+        number = resolve_whatsapp_recipient(
+            settings_obj, group["number"], reroute=reroute
+        )
         group_name = group["group__name"]
         users = list(
             user_model.objects.filter(groups__name__in=[group_name]).values(
@@ -749,6 +794,7 @@ def send_alert(
     threema_send_fn=None,
     sleep_fn=None,
     dry_run=False,
+    reroute=False,
 ):
     """Send a period/game alert to groups with alert enabled."""
     settings_obj = settings_obj or settings
@@ -777,7 +823,9 @@ def send_alert(
         "number", "group_id", "group__name", "alert"
     )
     for group in groups:
-        number = (group["number"] or "").lstrip("+")
+        number = resolve_whatsapp_recipient(
+            settings_obj, group["number"], reroute=reroute
+        )
         users = list(
             user_model.objects.filter(groups__name__in=[group["group__name"]]).values(
                 "username", "id"
@@ -840,10 +888,11 @@ def check_report_period(
     send_alert_fn=None,
     stats_fn=None,
     dry_run=False,
+    reroute=False,
 ):
     """Advance period state and send the matching alert when needed."""
     update_match_fn = update_match_fn or update_match
-    send_alert_fn = send_alert_fn or partial(send_alert, dry_run=dry_run)
+    send_alert_fn = send_alert_fn or partial(send_alert, dry_run=dry_run, reroute=reroute)
     print_debug(
         debug,
         "chk_rep: {0},{1},{2},{3},{4},{5}".format(
@@ -911,6 +960,7 @@ def run(
     debug=False,
     fake_breaktr=False,
     dry_run=False,
+    reroute=False,
     now_uts=None,
     season_id=None,
     last_match_fn=None,
@@ -943,19 +993,22 @@ def run(
         lambda mid, mdate: load_match_state(mid, mdate)
     )
     state = load_state_fn(match_id, match_date)
+    print_debug(debug, f"state: {state}")
     if state is None:
         state = EMPTY_MATCH
     print_debug(
         debug,
-        "home_team: {0} home_match:{1}".format(state.home_team, state.home_match),
+        f"home_team: {state.home_team} guest_team: {state.guest_team} home_match:{state.home_match} match_id:{state.match_id}, match_date:{format_match_datetime(state.match_date)}, result:{state.result}, period_cnt:{state.period_cnt}, ticker_id:{state.ticker_id}"
     )
     if state.done or not state.match_id:
         print_debug(debug, "match already over")
         return EXIT_SUCCESS
 
     update_match_fn = update_match_fn or update_match
-    send_yao_fn = send_yao_fn or partial(send_yao, dry_run=dry_run)
-    check_period_fn = check_period_fn or partial(check_report_period, dry_run=dry_run)
+    send_yao_fn = send_yao_fn or partial(send_yao, dry_run=dry_run, reroute=reroute)
+    check_period_fn = check_period_fn or partial(
+        check_report_period, dry_run=dry_run, reroute=reroute
+    )
 
     if state.ticker_id == 0:
         fetch_fn = fetch_players_fn or fetch_and_store_players
@@ -1018,7 +1071,10 @@ def main(argv=None):
     args = parse_args(argv)
     try:
         return run(
-            debug=args.debug, fake_breaktr=args.fake_breaktr, dry_run=args.dry_run
+            debug=args.debug,
+            fake_breaktr=args.fake_breaktr,
+            dry_run=args.dry_run,
+            reroute=args.reroute,
         )
     except Exception as exc:
         print("life_score failed: {0}".format(exc))
