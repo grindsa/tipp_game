@@ -117,6 +117,18 @@ class GetDelgamesTests(SimpleTestCase):
         self.assertEqual(args.season_id, 4)
         self.assertEqual(args.url, "http://example.test")
 
+    def test_fetch_html_uses_requests(self):
+        payload = b"<html>schedule</html>"
+        response = mock.Mock()
+        response.content = payload
+        get_fn = mock.Mock(return_value=response)
+        result = gd.fetch_html("https://example.test/schedule", get_fn=get_fn)
+        get_fn.assert_called_once_with(
+            "https://example.test/schedule", timeout=gd.HTTP_TIMEOUT_SECONDS
+        )
+        response.raise_for_status.assert_called_once()
+        self.assertEqual(result, payload)
+
     def test_parse_score_and_extension(self):
         self.assertEqual(gd.parse_score("3:2"), "3:2")
         self.assertEqual(gd.parse_score("10:3 n.V."), "10:3")

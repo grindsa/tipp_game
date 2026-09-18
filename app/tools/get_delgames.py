@@ -9,8 +9,8 @@ import os
 import sys
 import time
 from collections import namedtuple
-from urllib.request import urlopen
 
+import requests
 from bs4 import BeautifulSoup
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
@@ -107,11 +107,12 @@ def load_del_teams(team_model=None):
     )
 
 
-def fetch_html(url, timeout=HTTP_TIMEOUT_SECONDS, opener=None):
+def fetch_html(url, timeout=HTTP_TIMEOUT_SECONDS, get_fn=None):
     """Download the schedule HTML."""
-    opener = opener or urlopen
-    with opener(url, timeout=timeout) as response:
-        return response.read()
+    getter = get_fn or requests.get
+    response = getter(url, timeout=timeout)
+    response.raise_for_status()
+    return response.content
 
 
 def parse_score(raw_result):
