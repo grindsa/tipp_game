@@ -345,6 +345,7 @@ class LifeScoreTests(SimpleTestCase):
         text = ls.get_gamestat_text(9, stats_fn=lambda *_args: stats)
         self.assertIn("Torschüsse: 10 / 8", text)
         self.assertIsNone(ls.get_gamestat_text(9, stats_fn=lambda *_args: None))
+        self.assertIsNone(ls.get_gamestat_text(9))
 
     def test_run_skips_old_and_finished_matches(self):
         rc = ls.run(

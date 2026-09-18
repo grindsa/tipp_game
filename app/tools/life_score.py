@@ -680,10 +680,7 @@ def send_yao(
 def get_gamestat_text(match_id, stats_fn=None):
     """Optional period-end statistics block. Missing helper is ignored."""
     if stats_fn is None:
-        try:
-            from game.myfunctions import get_gamestats as stats_fn
-        except ImportError:
-            return None
+        return None
     try:
         stats = stats_fn(match_id, True)
         if not stats or stats.get("homeSog", 0) <= 0 or stats.get("guestSog", 0) <= 0:
