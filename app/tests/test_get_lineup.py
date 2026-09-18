@@ -85,8 +85,8 @@ class FakeDelAppHelper(object):
     def __exit__(self, exc_type, exc, tb):
         return False
 
-    def lineup_format(self, game_id, home_match, match_id=None):
-        self.calls.append(("lineup_format", game_id, home_match, match_id))
+    def lineup_format(self, game_id, home_match):
+        self.calls.append(("lineup_format", game_id, home_match))
         if home_match:
             return self.lineup, self.raw_json
         return self.guest_lineup, self.raw_json
@@ -101,9 +101,15 @@ class GetLineupTests(SimpleTestCase):
         defaults = gl.parse_args([])
         self.assertFalse(defaults.debug)
         self.assertFalse(defaults.dry_run)
+        self.assertFalse(defaults.reroute)
+        self.assertFalse(defaults.ignore_existing)
         self.assertTrue(gl.parse_args(["-d"]).debug)
         self.assertTrue(gl.parse_args(["--debug"]).debug)
         self.assertTrue(gl.parse_args(["--dry-run"]).dry_run)
+        self.assertTrue(gl.parse_args(["-r"]).reroute)
+        self.assertTrue(gl.parse_args(["--reroute"]).reroute)
+        self.assertTrue(gl.parse_args(["-i"]).ignore_existing)
+        self.assertTrue(gl.parse_args(["--ignore-existing"]).ignore_existing)
 
     def test_select_current_match_prefers_closer_kickoff(self):
         now_uts = 1000
@@ -192,6 +198,25 @@ class GetLineupTests(SimpleTestCase):
         )
         self.assertEqual(helper.calls, [])
 
+    def test_fetch_lineup_message_ignore_existing_fetches_when_stored(self):
+        helper = FakeDelAppHelper(lineup="EBB XI", guest_lineup="MAN XI")
+        stored = FakeModel(exists=True)
+        message = gl.fetch_lineup_message(
+            False,
+            helper,
+            77,
+            True,
+            9,
+            lineup_model=stored,
+            ignore_existing=True,
+        )
+        self.assertIn("EBB XI", message)
+        self.assertIn("MAN XI", message)
+        self.assertEqual(
+            helper.calls,
+            [("lineup_format", 77, True), ("lineup_format", 77, False)],
+        )
+
     def test_fetch_lineup_message_stores_home_and_guest(self):
         helper = FakeDelAppHelper(lineup="EBB XI", guest_lineup="MAN XI")
         lineup_model = FakeModel(exists=False)
@@ -204,10 +229,29 @@ class GetLineupTests(SimpleTestCase):
         self.assertIn("MAN XI", message)
         self.assertEqual(
             helper.calls,
-            [("lineup_format", 77, True, None), ("lineup_format", 77, False, 9)],
+            [("lineup_format", 77, True), ("lineup_format", 77, False)],
         )
         self.assertEqual(lineup_model.objects.rows[0]["match_id"], 9)
         self.assertEqual(lineup_model.objects.rows[0]["defaults"]["lineup"], "EBB XI")
+
+    def test_fetch_lineup_message_keeps_home_when_guest_fails(self):
+        helper = FakeDelAppHelper(lineup="EBB XI", guest_lineup="MAN XI")
+        original_format = helper.lineup_format
+
+        def failing_guest(game_id, home_match):
+            if not home_match:
+                raise TypeError(
+                    "lineup_format() takes from 1 to 3 positional arguments but 4 were given"
+                )
+            return original_format(game_id, home_match)
+
+        helper.lineup_format = failing_guest
+        message = gl.fetch_lineup_message(
+            False, helper, 77, True, 9, lineup_model=FakeModel(exists=False)
+        )
+        self.assertIn("EBB XI", message)
+        self.assertNotIn(gl.GUEST_LINEUP_INTRO, message)
+        self.assertNotIn("MAN XI", message)
 
     def test_fetch_lineup_message_returns_empty_when_del_has_none(self):
         helper = FakeDelAppHelper(lineup="", guest_lineup="")
@@ -248,6 +292,67 @@ class GetLineupTests(SimpleTestCase):
             )
         )
         self.assertEqual(helper.calls, [])
+
+    def test_fetch_referee_message_ignore_existing_fetches_when_stored(self):
+        helper = FakeDelAppHelper()
+        referee_model = FakeModel([{"id": 1, "name": "Andre Scholz"}])
+        refpermatch_model = FakeModel(exists=True)
+        message = gl.fetch_referee_message(
+            False,
+            helper,
+            77,
+            9,
+            referee_model=referee_model,
+            refpermatch_model=refpermatch_model,
+            ignore_existing=True,
+        )
+        self.assertIn("Rene Scholz", message)
+        self.assertEqual(helper.calls, [("reflist_get", 77)])
+
+    def test_notify_recipients_reroute_sends_to_admin_number(self):
+        wa_calls = []
+        threema_calls = []
+        with mock.patch.dict(os.environ, {"WA_ADMIN_NUMBER": ""}, clear=False):
+            sent = gl.notify_recipients(
+                "Aufstellung",
+                SETTINGS,
+                groups=["111", "222"],
+                threema_users=["DBUF47V8"],
+                wa_send_fn=lambda *args: wa_calls.append(args),
+                threema_send_fn=lambda *args: threema_calls.append(args),
+                reroute=True,
+            )
+        self.assertTrue(sent)
+        self.assertEqual(wa_calls[0][2], SETTINGS.WA_ADMIN_NUMBER)
+        self.assertEqual(threema_calls[0][3], "DBUF47V8")
+
+    @mock.patch.dict(os.environ, {"WA_ADMIN_NUMBER": "499988877766"}, clear=False)
+    def test_notify_recipients_reroute_prefers_env_admin_number(self):
+        wa_calls = []
+        sent = gl.notify_recipients(
+            "Aufstellung",
+            SETTINGS,
+            groups=["111"],
+            threema_users=[],
+            wa_send_fn=lambda *args: wa_calls.append(args),
+            reroute=True,
+        )
+        self.assertTrue(sent)
+        self.assertEqual(wa_calls[0][2], "499988877766")
+
+    def test_notify_recipients_reroute_requires_admin_number(self):
+        incomplete = SimpleNamespace(WA_SRV="wa.local", WA_PORT=9009)
+        with mock.patch.dict(os.environ, {"WA_ADMIN_NUMBER": ""}, clear=False):
+            with self.assertRaises(RuntimeError) as raised:
+                gl.notify_recipients(
+                    "body",
+                    incomplete,
+                    dry_run=True,
+                    groups=["111"],
+                    threema_users=[],
+                    reroute=True,
+                )
+        self.assertIn("WA_ADMIN_NUMBER", str(raised.exception))
 
     def test_notify_recipients_sends_whatsapp_and_threema(self):
         wa_calls = []
@@ -334,8 +439,12 @@ class GetLineupTests(SimpleTestCase):
             groups=["111"],
         )
         self.assertEqual(rc, gl.EXIT_SUCCESS)
-        fetch_lineup.assert_called_once_with(False, helper, 77, True, 9)
-        fetch_refs.assert_called_once_with(False, helper, 77, 9)
+        fetch_lineup.assert_called_once_with(
+            False, helper, 77, True, 9, ignore_existing=False
+        )
+        fetch_refs.assert_called_once_with(
+            False, helper, 77, 9, ignore_existing=False
+        )
         notify.assert_called_once()
         self.assertEqual(notify.call_args.args[0], "LINEUP\nREFS")
 
@@ -404,6 +513,35 @@ class GetLineupTests(SimpleTestCase):
         self.assertIn("dry-run threema DBUF47V8:", printed)
         self.assertIn("LINEUP", printed)
 
+    def test_run_ignore_existing_and_reroute_are_forwarded(self):
+        helper = FakeDelAppHelper()
+        notify = mock.Mock()
+        fetch_lineup = mock.Mock(return_value="LINEUP")
+        fetch_refs = mock.Mock(return_value="REFS")
+        rc = gl.run(
+            reroute=True,
+            ignore_existing=True,
+            now_uts=1000,
+            season_id=1,
+            next_match_fn=lambda *_args: (9, 1100, False),
+            last_match_fn=lambda *_args: (8, 400, 1),
+            load_game_fn=lambda *_args: (77, True),
+            helper_factory=lambda debug: helper,
+            fetch_lineup_fn=fetch_lineup,
+            fetch_refs_fn=fetch_refs,
+            notify_fn=notify,
+            settings_obj=SETTINGS,
+            groups=["111"],
+        )
+        self.assertEqual(rc, gl.EXIT_SUCCESS)
+        fetch_lineup.assert_called_once_with(
+            False, helper, 77, True, 9, ignore_existing=True
+        )
+        fetch_refs.assert_called_once_with(
+            False, helper, 77, 9, ignore_existing=True
+        )
+        self.assertTrue(notify.call_args.kwargs["reroute"])
+
     def test_main_returns_runtime_error_on_failure(self):
         with mock.patch.object(gl, "run", side_effect=RuntimeError("boom")):
             output = io.StringIO()
@@ -415,13 +553,24 @@ class GetLineupTests(SimpleTestCase):
     def test_main_passes_debug_flag(self):
         with mock.patch.object(gl, "run", return_value=gl.EXIT_SUCCESS) as run_fn:
             self.assertEqual(gl.main([]), gl.EXIT_SUCCESS)
-            run_fn.assert_called_once_with(debug=False, dry_run=False)
+            run_fn.assert_called_once_with(
+                debug=False, dry_run=False, reroute=False, ignore_existing=False
+            )
         with mock.patch.object(gl, "run", return_value=gl.EXIT_SUCCESS) as run_fn:
             self.assertEqual(gl.main(["-d"]), gl.EXIT_SUCCESS)
-            run_fn.assert_called_once_with(debug=True, dry_run=False)
+            run_fn.assert_called_once_with(
+                debug=True, dry_run=False, reroute=False, ignore_existing=False
+            )
         with mock.patch.object(gl, "run", return_value=gl.EXIT_SUCCESS) as run_fn:
             self.assertEqual(gl.main(["--dry-run"]), gl.EXIT_SUCCESS)
-            run_fn.assert_called_once_with(debug=False, dry_run=True)
+            run_fn.assert_called_once_with(
+                debug=False, dry_run=True, reroute=False, ignore_existing=False
+            )
+        with mock.patch.object(gl, "run", return_value=gl.EXIT_SUCCESS) as run_fn:
+            self.assertEqual(gl.main(["-r", "-i"]), gl.EXIT_SUCCESS)
+            run_fn.assert_called_once_with(
+                debug=False, dry_run=False, reroute=True, ignore_existing=True
+            )
 
     def test_default_config_path_uses_script_directory(self):
         path = gl.default_config_path("/tmp/tools/get_lineup.py")

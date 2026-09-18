@@ -55,6 +55,18 @@ def parse_args(argv=None):
         action="store_true",
         help="Print generated messages instead of sending WhatsApp/Threema.",
     )
+    parser.add_argument(
+        "-r",
+        "--reroute",
+        action="store_true",
+        help="Send WhatsApp messages to WA_ADMIN_NUMBER instead of configured groups.",
+    )
+    parser.add_argument(
+        "-i",
+        "--ignore-existing",
+        action="store_true",
+        help="Fetch and send even when lineup or referees are already stored.",
+    )
     return parser.parse_args(argv)
 
 
@@ -231,9 +243,10 @@ def fetch_lineup_message(
     home_match,
     match_id,
     lineup_model=None,
+    ignore_existing=False,
 ):
     """Fetch, store, and format the lineup when it is not already stored."""
-    if lineup_exists(match_id, lineup_model=lineup_model):
+    if not ignore_existing and lineup_exists(match_id, lineup_model=lineup_model):
         print_debug(debug, "we have a lineup stored in db. Do nothing")
         return None
 
@@ -244,7 +257,11 @@ def fetch_lineup_message(
 
     store_lineup(match_id, lineup, raw_json, lineup_model=lineup_model)
     message = "{0}{1}".format(LINEUP_INTRO, lineup)
-    guest_lineup, _raw = helper.lineup_format(game_id, not home_match, match_id)
+    try:
+        guest_lineup, _raw = helper.lineup_format(game_id, not home_match)
+    except Exception as exc:
+        print_debug(debug, "guest lineup fetch failed: {0}".format(exc))
+        guest_lineup = None
     if guest_lineup:
         message = "{0}{1}{2}".format(message, GUEST_LINEUP_INTRO, guest_lineup)
     return message
@@ -257,9 +274,10 @@ def fetch_referee_message(
     match_id,
     referee_model=None,
     refpermatch_model=None,
+    ignore_existing=False,
 ):
     """Fetch, store, and format referees when they are not already stored."""
-    if refs_exist(match_id, refpermatch_model=refpermatch_model):
+    if not ignore_existing and refs_exist(match_id, refpermatch_model=refpermatch_model):
         print_debug(debug, "we have a refs stored in db. Do nothing")
         return None
 
@@ -310,6 +328,18 @@ def threema_configured(settings_obj):
     )
 
 
+def admin_whatsapp_number(settings_obj=None):
+    """Return WA_ADMIN_NUMBER from the environment or Django settings."""
+    number = os.environ.get("WA_ADMIN_NUMBER", "").strip()
+    if number:
+        return number
+    if settings_obj is not None:
+        number = getattr(settings_obj, "WA_ADMIN_NUMBER", None)
+        if number:
+            return str(number).strip()
+    return ""
+
+
 def load_whatsapp_groups(groupsetting_model=None):
     """Load WhatsApp groups that should receive lineup alerts."""
     model = groupsetting_model or Groupsetting
@@ -318,6 +348,20 @@ def load_whatsapp_groups(groupsetting_model=None):
         for number in model.objects.filter(alert=True).values_list("number", flat=True)
         if number
     ]
+
+
+def resolve_whatsapp_groups(settings_obj, groups=None, reroute=False):
+    """Return WhatsApp destinations, optionally replaced by WA_ADMIN_NUMBER."""
+    if reroute:
+        admin = admin_whatsapp_number(settings_obj)
+        if not admin:
+            raise RuntimeError(
+                "WA_ADMIN_NUMBER is not set; cannot reroute WhatsApp messages"
+            )
+        return [admin]
+    if groups is None:
+        return load_whatsapp_groups()
+    return groups
 
 
 def load_threema_users(usersetting_model=None):
@@ -364,6 +408,7 @@ def notify_recipients(
     threema_users=None,
     wa_send_fn=None,
     threema_send_fn=None,
+    reroute=False,
 ):
     """Send the lineup announcement, or print it during dry-run."""
     if not body:
@@ -372,8 +417,7 @@ def notify_recipients(
         return False
 
     message = format_outgoing_message(body)
-    if groups is None:
-        groups = load_whatsapp_groups()
+    groups = resolve_whatsapp_groups(settings_obj, groups=groups, reroute=reroute)
     if threema_users is None:
         threema_users = load_threema_users()
 
@@ -409,6 +453,8 @@ def notify_recipients(
 def run(
     debug=False,
     dry_run=False,
+    reroute=False,
+    ignore_existing=False,
     now_uts=None,
     season_id=None,
     next_match_fn=None,
@@ -453,12 +499,21 @@ def run(
     referee_text = None
     with factory(debug) as helper:
         try:
-            lineup_text = fetch_lineup_fn(debug, helper, game_id, home_match, match_id)
+            lineup_text = fetch_lineup_fn(
+                debug,
+                helper,
+                game_id,
+                home_match,
+                match_id,
+                ignore_existing=ignore_existing,
+            )
         except Exception as exc:
             print_debug(debug, "lineup fetch failed: {0}".format(exc))
             lineup_text = None
         try:
-            referee_text = fetch_refs_fn(debug, helper, game_id, match_id)
+            referee_text = fetch_refs_fn(
+                debug, helper, game_id, match_id, ignore_existing=ignore_existing
+            )
         except Exception as exc:
             print_debug(debug, "referee fetch failed: {0}".format(exc))
             referee_text = None
@@ -475,6 +530,7 @@ def run(
         threema_users=threema_users,
         wa_send_fn=wa_send_fn,
         threema_send_fn=threema_send_fn,
+        reroute=reroute,
     )
     return EXIT_SUCCESS
 
@@ -483,7 +539,12 @@ def main(argv=None):
     """CLI entry point."""
     args = parse_args(argv)
     try:
-        return run(debug=args.debug, dry_run=args.dry_run)
+        return run(
+            debug=args.debug,
+            dry_run=args.dry_run,
+            reroute=args.reroute,
+            ignore_existing=args.ignore_existing,
+        )
     except Exception as exc:
         print("get_lineup failed: {0}".format(exc))
         return EXIT_RUNTIME_ERROR
