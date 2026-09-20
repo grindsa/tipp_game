@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Eisbären live-score ticker based on the EBB JSON feed."""
+"""Eisbären live-score ticker based on the DEL period-events JSON feed."""
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -33,11 +33,28 @@ try:
 except ImportError:
     from game.wa_hack_cli import simple_send
 
-TICKER_URL = "https://app.eisbaeren.de/index.php?r=output%2Fliveticker"
+TICKER_URL = (
+    "https://s3.eu-west-1.amazonaws.com/de.hokejovyzapis.cz/matches/{0}/period-events.json"
+)
 PLAYER_URL = "https://app.eisbaeren.de/index.php?r=output%2Fplayer"
 GAMESTATS_URL = "http://tippspiel.dynamop.de/game/gamestats"
 EBB_SHORT_NAME = "EBB"
 MATCH_TZ = timezone("Europe/Berlin")
+PERIOD_KEYS = ("1", "2", "3", "overtime", "shootout")
+PERIOD_LABELS = {
+    "1": "1. Drittel",
+    "2": "2. Drittel",
+    "3": "3. Drittel",
+    "overtime": "OT",
+    "shootout": "SO",
+}
+# periodStart in this key means the previous period just ended.
+PERIOD_START_ENDS = {
+    "2": "1.",
+    "3": "2.",
+    "overtime": "3.",
+    "shootout": "3.",
+}
 
 MATCH_MAX_AGE_SECONDS = 43200
 FAKE_BREAKTR_MATCH_MAX_AGE_SECONDS = 1443200
@@ -58,23 +75,24 @@ MatchState = namedtuple(
     "MatchState",
     (
         "match_id match_date done period_cnt result break_time "
-        "home_team guest_team home_match ticker_id no_bet"
+        "home_team guest_team home_match ticker_id no_bet delapp_game_id"
     ),
 )
 EMPTY_MATCH = MatchState(
-    None, None, True, 0, "0:0", 0, None, None, False, 0, False
+    None, None, True, 0, "0:0", 0, None, None, False, 0, False, 0
 )
 
 TickerUpdate = namedtuple(
     "TickerUpdate",
-    "home_score guest_score scorer_name score_time score period_num remaining_time",
+    "home_score guest_score scorer_name score_time score period_num remaining_time period_label",
+    defaults=(None,),
 )
 
 
 def parse_args(argv=None):
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
-        description="Poll the Eisbären live ticker and notify groups about goals and periods."
+        description="Poll the DEL period-events feed and notify groups about goals and periods."
     )
     parser.add_argument(
         "-d",
@@ -201,60 +219,101 @@ def fetch_json(url, timeout=HTTP_TIMEOUT_SECONDS, get_fn=None):
     return response.json()
 
 
-def sort_ticker_events(events):
-    """Sort ticker events by ascending id."""
-    return sorted(events or [], key=lambda item: item.get("id", 0))
+def period_events_url(game_id, debug=False):
+    """Build the S3 period-events URL for a DEL match id."""
+    print_debug(debug, "period_events_url game_id={0}".format(game_id))
+    if not game_id:
+        print_debug(debug, "period_events_url -> None")
+        return None
+    url = TICKER_URL.format(int(game_id))
+    print_debug(debug, "period_events_url -> {0}".format(url))
+    return url
 
 
-def scores_from_goal_entry(entry, home_match):
-    """Map EBB/opponent goals onto home/guest scores."""
-    goals = entry.get("goals") or {}
-    berlin = goals.get("berlin") or 0
-    opponent = goals.get("opponent") or 0
-    if home_match:
-        return berlin, opponent
-    return opponent, berlin
+def flatten_period_events(payload, debug=False):
+    """Flatten period-keyed events into chronological sequence numbers."""
+    print_debug(debug, "flatten_period_events()")
+    events = []
+    seq = 0
+    source = payload if isinstance(payload, dict) else {}
+    for period_key in PERIOD_KEYS:
+        for entry in source.get(period_key) or []:
+            if not isinstance(entry, dict):
+                continue
+            seq += 1
+            events.append(
+                {
+                    "seq": seq,
+                    "period_key": period_key,
+                    "time": entry.get("time") or 0,
+                    "type": entry.get("type"),
+                    "data": entry.get("data") or {},
+                }
+            )
+    print_debug(debug, "flatten_period_events -> {0}".format(len(events)))
+    return events
+
+
+def scores_from_current_score(current_score, debug=False):
+    """Parse a `h:g` currentScore from a period-events goal."""
+    print_debug(debug, "scores_from_current_score current_score={0}".format(current_score))
+    if current_score in (None, ""):
+        return None
+    home, guest = split_score(current_score)
+    return home, guest
+
+
+def scorer_from_event(data, debug=False):
+    """Return `Surname, Name` from a period-events goal payload."""
+    scorer = (data or {}).get("scorer") or {}
+    surname = (scorer.get("surname") or "").strip()
+    name = (scorer.get("name") or "").strip()
+    if surname and name:
+        label = "{0}, {1}".format(surname, name)
+    else:
+        label = surname or name or None
+    print_debug(debug, "scorer_from_event -> {0}".format(label))
+    return label
+
+
+def period_label_from_key(period_key, debug=False):
+    """Map a period-events key to a German period label."""
+    label = PERIOD_LABELS.get(str(period_key) if period_key is not None else "")
+    print_debug(debug, "period_label_from_key {0} -> {1}".format(period_key, label))
+    return label
+
+
+def period_end_from_event(event, debug=False):
+    """Return (period_num, remaining_time) when a period just ended."""
+    event_type = (event or {}).get("type")
+    period_key = (event or {}).get("period_key")
+    if event_type in ("periodEnd", "periodend"):
+        marker = "{0}.".format(period_key) if str(period_key).isdigit() else "3."
+        print_debug(debug, "period_end_from_event periodEnd -> {0}".format(marker))
+        return marker, "0:00"
+    if event_type == "periodStart":
+        marker = PERIOD_START_ENDS.get(str(period_key))
+        if marker:
+            print_debug(debug, "period_end_from_event periodStart {0} -> {1}".format(period_key, marker))
+            return marker, "0:00"
+    print_debug(debug, "period_end_from_event -> None")
+    return None, None
 
 
 def clock_from_game_time(game_time):
-    """Format ticker gameTime seconds as `mm:ss`."""
+    """Format game-clock seconds as `mm:ss`."""
     minutes, seconds = divmod(int(game_time or 0), 60)
     return "{0}:{1}".format(str(minutes).zfill(2), str(seconds).zfill(2)), minutes
 
 
-def lookup_player_name(player_id, player_model=None):
-    """Resolve a player name from Playerstatebb."""
-    model = player_model or Playerstatebb
-    try:
-        player = model.objects.filter(id=player_id).values("firstname", "lastname")[0]
-    except IndexError:
-        return None
-    return "{0}, {1}".format(player["lastname"], player["firstname"])
-
-
-def scorer_from_entry(entry, lookup_fn=None):
-    """Return a scorer name from a ticker goal event."""
-    if entry.get("playerName"):
-        return entry["playerName"]
-    if "playerId" in entry:
-        lookup_fn = lookup_fn or lookup_player_name
-        return lookup_fn(entry["playerId"])
-    return None
-
-
-def period_from_entry(entry):
-    """Return (period_num, remaining_time) for period-end or match-end events."""
-    if entry.get("updateType") == "periodend":
-        period_name = entry.get("periodName") or ""
-        if " " in period_name:
-            num, _rest = period_name.split(" ", 1)
-            if num == "OT":
-                num = "3."
-            return num, "0:00"
-        return None, None
-    if entry.get("headline") == "Spielende":
-        return "3.", "0:00"
-    return None, None
+def remaining_from_event(event, debug=False):
+    """Build the Match.remaining text from a period-events item."""
+    period_key = (event or {}).get("period_key")
+    label = period_label_from_key(period_key, debug=debug) or period_key or "Spiel"
+    clock, minutes = clock_from_game_time((event or {}).get("time"))
+    remaining = "wir sind im {0} ({1})...".format(label, clock)
+    print_debug(debug, "remaining_from_event -> {0}".format(remaining))
+    return remaining, minutes
 
 
 def update_match(match_id, match_model=None, **defaults):
@@ -277,6 +336,7 @@ def load_match_state(match_id, match_date, match_model=None):
             "guest_team__short_name",
             "last_ebbticker_id",
             "no_bet",
+            "delapp_game_id",
         )[0]
     except IndexError:
         return None
@@ -294,6 +354,7 @@ def load_match_state(match_id, match_date, match_model=None):
         home_match=is_home_match(home_team),
         ticker_id=int(row["last_ebbticker_id"] or 0),
         no_bet=bool(row["no_bet"]),
+        delapp_game_id=int(row["delapp_game_id"] or 0),
     )
 
 
@@ -313,66 +374,82 @@ def fetch_and_store_players(debug, fetch_json_fn=None, player_model=None):
 def get_score_from_json(
     debug,
     match_id,
+    game_id,
     ticker_id,
-    home_match,
     result,
     fetch_json_fn=None,
     update_match_fn=None,
-    lookup_fn=None,
 ):
-    """Read new ticker events and return the latest score/period update."""
+    """Read new period-events and return the latest score/period update."""
     fetch_json_fn = fetch_json_fn or fetch_json
     update_match_fn = update_match_fn or update_match
     home_score, guest_score = split_score(result)
     score = format_score(home_score, guest_score)
     update = TickerUpdate(home_score, guest_score, None, None, score, None, None)
 
-    payload = fetch_json_fn(TICKER_URL)
-    events = sort_ticker_events(payload.get("events"))
+    url = period_events_url(game_id, debug=debug)
+    if not url:
+        print_debug(debug, "json skip: missing delapp_game_id")
+        return update
 
-    for entry in events:
-        if entry.get("id", 0) <= ticker_id:
+    payload = fetch_json_fn(url)
+    events = flatten_period_events(payload, debug=debug)
+    ticker_id = int(ticker_id or 0)
+
+    for event in events:
+        if event["seq"] <= ticker_id:
             continue
 
-        minutes = 0
-        if entry.get("updateType") == "goal":
-            score_time, minutes = clock_from_game_time(entry.get("gameTime"))
-            home_score, guest_score = scores_from_goal_entry(entry, home_match)
+        remaining, _minutes = remaining_from_event(event, debug=debug)
+        update_match_fn(
+            match_id, last_ebbticker_id=event["seq"], remaining=remaining
+        )
+
+        if event.get("type") == "goal":
+            data = event.get("data") or {}
+            parsed = scores_from_current_score(data.get("currentScore"), debug=debug)
+            if parsed is None:
+                continue
+            home_score, guest_score = parsed
             score = format_score(home_score, guest_score)
-            scorer_name = scorer_from_entry(entry, lookup_fn=lookup_fn)
+            score_time, _minutes = clock_from_game_time(
+                data.get("scoreboardTime", event.get("time"))
+            )
+            scorer_name = scorer_from_event(data, debug=debug)
+            period_label = period_label_from_key(event.get("period_key"), debug=debug)
             print_debug(
                 debug,
                 "json Tor: {0}, {1}, {2}".format(score_time, scorer_name, score),
             )
             update = TickerUpdate(
-                home_score, guest_score, scorer_name, score_time, score, None, None
+                home_score,
+                guest_score,
+                scorer_name,
+                score_time,
+                score,
+                None,
+                None,
+                period_label,
             )
-            stop = True
-        else:
-            period_num, remaining_time = period_from_entry(entry)
-            _clock, minutes = clock_from_game_time(entry.get("gameTime"))
-            stop = period_num is not None
-            if stop:
-                print_debug(
-                    debug,
-                    "json: periodend {0}".format(entry.get("periodName") or "Spielende"),
-                )
-                update = TickerUpdate(
-                    home_score,
-                    guest_score,
-                    None,
-                    None,
-                    score,
-                    period_num,
-                    remaining_time,
-                )
-
-        remaining = "wir sind in der {0}. Spielminute...".format(minutes)
-        update_match_fn(
-            match_id, last_ebbticker_id=entry["id"], remaining=remaining
-        )
-        if stop:
             break
+
+        period_num, remaining_time = period_end_from_event(event, debug=debug)
+        if period_num is None:
+            continue
+        print_debug(
+            debug,
+            "json: periodend {0} from {1}".format(period_num, event.get("type")),
+        )
+        update = TickerUpdate(
+            home_score,
+            guest_score,
+            None,
+            None,
+            score,
+            period_num,
+            remaining_time,
+        )
+        break
 
     print_debug(
         debug,
@@ -941,7 +1018,7 @@ def apply_goal_update(debug, state, update, send_yao_fn=None, update_match_fn=No
             update.score,
             update.scorer_name,
             update.score_time,
-            period_label_from_clock(update.score_time),
+            update.period_label or period_label_from_clock(update.score_time),
         )
     update_match_fn(state.match_id, result=update.score)
     smily = how_to_smile(
@@ -995,7 +1072,7 @@ def run(
         state = EMPTY_MATCH
     print_debug(
         debug,
-        f"home_team: {state.home_team} guest_team: {state.guest_team} home_match:{state.home_match} match_id:{state.match_id}, match_date:{format_match_datetime(state.match_date)}, result:{state.result}, period_cnt:{state.period_cnt}, ticker_id:{state.ticker_id}"
+        f"home_team: {state.home_team} guest_team: {state.guest_team} home_match:{state.home_match} match_id:{state.match_id}, match_date:{format_match_datetime(state.match_date)}, result:{state.result}, period_cnt:{state.period_cnt}, ticker_id:{state.ticker_id}, delapp_game_id:{state.delapp_game_id}"
     )
     if state.done or not state.match_id:
         print_debug(debug, "match already over")
@@ -1007,13 +1084,11 @@ def run(
         check_report_period, dry_run=dry_run, reroute=reroute
     )
 
-    if state.ticker_id == 0:
-        fetch_fn = fetch_players_fn or fetch_and_store_players
-        fetch_fn(debug)
-
     break_end = now_uts + break_seconds
     if is_first_run(state):
         print_debug(debug, "this is the first run after the match started")
+        fetch_fn = fetch_players_fn or fetch_and_store_players
+        fetch_fn(debug)
         update_match_fn(state.match_id, result="0:0", period_cnt=1)
         if state.no_bet:
             send_yao_fn(None, 0, 0, state.match_id, None, match_start=True)
@@ -1036,8 +1111,8 @@ def run(
         update = fetch_ticker_fn(
             debug,
             state.match_id,
+            state.delapp_game_id,
             state.ticker_id,
-            state.home_match,
             state.result,
         )
         apply_goal_update(

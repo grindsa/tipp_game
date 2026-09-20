@@ -32,31 +32,43 @@ def _state(**overrides):
         home_match=True,
         ticker_id=5,
         no_bet=False,
+        delapp_game_id=4396,
     )
     values.update(overrides)
     return ls.MatchState(**values)
 
 
-def _goal_event(event_id, game_time, berlin, opponent, player_name="Hager", player_id=None):
-    entry = {
-        "id": event_id,
-        "updateType": "goal",
-        "gameTime": game_time,
-        "goals": {"berlin": berlin, "opponent": opponent},
-    }
-    if player_name is not None:
-        entry["playerName"] = player_name
-    if player_id is not None:
-        entry["playerId"] = player_id
-    return entry
-
-
-def _period_event(event_id, period_name, game_time=1200):
+def _period_events(goals=None, period2=None):
+    period1 = [
+        {"time": 0, "type": "periodStart"},
+        {
+            "time": 0,
+            "type": "goalkeeperChange",
+            "data": {"id": 1, "team": "home"},
+        },
+    ]
+    for goal in goals or []:
+        period1.append(goal)
     return {
-        "id": event_id,
-        "updateType": "periodend",
-        "periodName": period_name,
-        "gameTime": game_time,
+        "1": period1,
+        "2": list(period2 or []),
+        "3": [],
+        "overtime": [],
+        "shootout": [],
+    }
+
+
+def _goal_event(event_id, time_seconds, current_score, first="Jonas", last="Müller"):
+    return {
+        "time": time_seconds,
+        "type": "goal",
+        "data": {
+            "id": event_id,
+            "team": "visitor",
+            "currentScore": current_score,
+            "scoreboardTime": time_seconds,
+            "scorer": {"name": first, "surname": last},
+        },
     }
 
 
@@ -147,34 +159,32 @@ class LifeScoreTests(SimpleTestCase):
         self.assertIsNone(ls.parse_period_number(None))
         self.assertIsNone(ls.parse_period_number(""))
 
-    def test_scores_from_goal_entry_home_and_away(self):
-        entry = _goal_event(1, 90, berlin=2, opponent=1)
-        self.assertEqual(ls.scores_from_goal_entry(entry, True), (2, 1))
-        self.assertEqual(ls.scores_from_goal_entry(entry, False), (1, 2))
+    def test_period_events_url_uses_delapp_game_id(self):
+        self.assertEqual(
+            ls.period_events_url(4396),
+            "https://s3.eu-west-1.amazonaws.com/de.hokejovyzapis.cz/matches/4396/period-events.json",
+        )
+        self.assertIsNone(ls.period_events_url(0))
+        self.assertIsNone(ls.period_events_url(None))
+
+    def test_flatten_period_events_assigns_sequence(self):
+        events = ls.flatten_period_events(
+            _period_events(goals=[_goal_event(27669, 56, "0:1")])
+        )
+        self.assertEqual([item["type"] for item in events], ["periodStart", "goalkeeperChange", "goal"])
+        self.assertEqual([item["seq"] for item in events], [1, 2, 3])
+        self.assertEqual(events[-1]["period_key"], "1")
+
+    def test_scorer_from_event_joins_surname_and_name(self):
+        self.assertEqual(
+            ls.scorer_from_event({"scorer": {"name": "Jonas", "surname": "Müller"}}),
+            "Müller, Jonas",
+        )
+        self.assertIsNone(ls.scorer_from_event({}))
 
     def test_clock_from_game_time(self):
         self.assertEqual(ls.clock_from_game_time(125), ("02:05", 2))
         self.assertEqual(ls.clock_from_game_time(None), ("00:00", 0))
-
-    def test_period_from_entry(self):
-        self.assertEqual(
-            ls.period_from_entry(_period_event(1, "1. Drittel")),
-            ("1.", "0:00"),
-        )
-        self.assertEqual(
-            ls.period_from_entry(_period_event(1, "OT 5min")),
-            ("3.", "0:00"),
-        )
-        self.assertEqual(
-            ls.period_from_entry({"headline": "Spielende"}),
-            ("3.", "0:00"),
-        )
-        self.assertEqual(ls.period_from_entry({"updateType": "shot"}), (None, None))
-
-    def test_sort_ticker_events(self):
-        events = [{"id": 3}, {"id": 1}, {"id": 2}]
-        self.assertEqual([item["id"] for item in ls.sort_ticker_events(events)], [1, 2, 3])
-        self.assertEqual(ls.sort_ticker_events(None), [])
 
     def test_how_to_smile_home_and_away(self):
         home_goal = ls.how_to_smile(1, 0, "0:0", True)
@@ -231,13 +241,18 @@ class LifeScoreTests(SimpleTestCase):
         self.assertIsNone(message)
 
     def test_get_score_from_json_reads_new_goal_and_updates_cursor(self):
-        payload = {
-            "events": [
-                _goal_event(4, 80, 0, 0, player_name="Old"),
-                _goal_event(6, 125, 1, 0, player_name="Hager"),
+        payload = _period_events(
+            goals=[
+                _goal_event(27669, 56, "0:1"),
+                _goal_event(27670, 125, "0:2", first="Ty", last="Ronning"),
             ]
-        }
+        )
+        captured = []
         updates = []
+
+        def fetch_json(url):
+            captured.append(url)
+            return payload
 
         def update_match(_match_id, **defaults):
             updates.append(defaults)
@@ -245,31 +260,55 @@ class LifeScoreTests(SimpleTestCase):
         result = ls.get_score_from_json(
             False,
             9,
-            5,
-            True,
+            4396,
+            2,
             "0:0",
-            fetch_json_fn=lambda _url: payload,
+            fetch_json_fn=fetch_json,
             update_match_fn=update_match,
         )
-        self.assertEqual(result.score, "1:0")
-        self.assertEqual(result.scorer_name, "Hager")
-        self.assertEqual(result.score_time, "02:05")
-        self.assertEqual(updates[-1]["last_ebbticker_id"], 6)
+        self.assertEqual(result.score, "0:1")
+        self.assertEqual(result.scorer_name, "Müller, Jonas")
+        self.assertEqual(result.score_time, "00:56")
+        self.assertEqual(result.period_label, "1. Drittel")
+        self.assertEqual(
+            captured,
+            [
+                "https://s3.eu-west-1.amazonaws.com/de.hokejovyzapis.cz/matches/4396/period-events.json"
+            ],
+        )
+        self.assertEqual(updates[-1]["last_ebbticker_id"], 3)
 
-    def test_get_score_from_json_reads_period_end(self):
-        payload = {"events": [_period_event(8, "1. Drittel", 1200)]}
+    def test_get_score_from_json_reads_period_start_as_period_end(self):
+        payload = _period_events(
+            goals=[_goal_event(27669, 56, "0:1")],
+            period2=[{"time": 0, "type": "periodStart"}],
+        )
         result = ls.get_score_from_json(
             False,
             9,
-            5,
-            True,
-            "1:0",
+            4396,
+            3,
+            "0:1",
             fetch_json_fn=lambda _url: payload,
             update_match_fn=mock.Mock(),
         )
         self.assertEqual(result.period_num, "1.")
         self.assertEqual(result.remaining_time, "0:00")
-        self.assertEqual(result.score, "1:0")
+        self.assertEqual(result.score, "0:1")
+
+    def test_get_score_from_json_skips_when_game_id_missing(self):
+        fetch_json = mock.Mock(side_effect=AssertionError("should not fetch"))
+        result = ls.get_score_from_json(
+            False,
+            9,
+            0,
+            0,
+            "0:0",
+            fetch_json_fn=fetch_json,
+            update_match_fn=mock.Mock(),
+        )
+        self.assertEqual(result.score, "0:0")
+        fetch_json.assert_not_called()
 
     def test_store_goal_normalizes_clock_and_returns_text(self):
         saved = {}
