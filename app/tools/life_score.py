@@ -181,13 +181,28 @@ def format_score(home_score, guest_score):
     return "{0}:{1}".format(home_score, guest_score)
 
 
-def is_single_goal_increment(old_score, new_score):
-    """Return True when exactly one side scored exactly one goal."""
+def score_change(old_score, new_score):
+    """Return (home_delta, guest_delta) between two `h:g` scores."""
     old_home, old_guest = split_score(old_score)
     new_home, new_guest = split_score(new_score)
-    home_scored = new_home == old_home + 1 and new_guest == old_guest
-    guest_scored = new_home == old_home and new_guest == old_guest + 1
-    return home_scored or guest_scored
+    return new_home - old_home, new_guest - old_guest
+
+
+def is_single_goal_increment(old_score, new_score):
+    """Return True when exactly one side scored exactly one goal."""
+    return score_change(old_score, new_score) in ((1, 0), (0, 1))
+
+
+def is_single_goal_decrement(old_score, new_score):
+    """Return True when exactly one side lost exactly one goal."""
+    return score_change(old_score, new_score) in ((-1, 0), (0, -1))
+
+
+def is_single_goal_change(old_score, new_score):
+    """Return True when the score moved by exactly one goal on one side."""
+    return is_single_goal_increment(old_score, new_score) or is_single_goal_decrement(
+        old_score, new_score
+    )
 
 
 def period_label_from_clock(score_time):
@@ -302,7 +317,7 @@ def period_end_from_event(event, debug=False):
 
 def clock_from_game_time(game_time):
     """Format game-clock seconds as `mm:ss`."""
-    minutes, seconds = divmod(int(game_time or 0), 60)
+    minutes, seconds = divmod(int(float(game_time or 0)), 60)
     return "{0}:{1}".format(str(minutes).zfill(2), str(seconds).zfill(2)), minutes
 
 
@@ -486,6 +501,12 @@ def store_goal(match_id, score, scorer_name, score_time, period, goal_model=None
     return message
 
 
+def delete_goal(match_id, score, goal_model=None):
+    """Remove the Goal row for a retracted score."""
+    model = goal_model or Goal
+    model.objects.filter(match_id=match_id, score=score).delete()
+
+
 def unicode_multiplier(string, num):
     """Repeat a smiley once per goal."""
     return string * int(num)
@@ -542,6 +563,11 @@ def build_goal_header(home_score, guest_score, smily, scorer_name):
     if scorer_name:
         message = "{0}{1}".format(message, scorer_name)
     return message
+
+
+def build_correction_header(old_score, new_score):
+    """Build the headline for a one-goal referee correction."""
+    return "Korrektur: {0} → {1}\n".format(old_score, new_score)
 
 
 def append_yao_whatsapp(message, group_name, yao_dic, yai_dic):
@@ -654,6 +680,8 @@ def send_yao(
     match_id,
     smily,
     match_start=False,
+    correction=False,
+    old_score=None,
     settings_obj=None,
     group_model=None,
     user_model=None,
@@ -709,17 +737,19 @@ def send_yao(
             ).values("user_id", "user__username", "tip")
         )
         yao_dic, yai_dic = ({}, {})
-        if group["yao_message"]:
+        if group["yao_message"] and not correction:
             yao_dic, yai_dic = classify_user_tips(tips, home_score, guest_score)
 
         message = None
         if match_start:
             message = "Das Spiel hat begonnen..."
+        elif correction and (group["alert"] or group["yao_message"]):
+            message = build_correction_header(old_score, tip)
         elif tip != "0:0" and (group["alert"] or yao_dic):
             message = build_goal_header(home_score, guest_score, smily, scorer_name)
 
         wa_message = message
-        if group["yao_message"] and yao_dic and wa_message and not match_start:
+        if group["yao_message"] and yao_dic and wa_message and not match_start and not correction:
             wa_message = append_yao_whatsapp(
                 wa_message, group_name, yao_dic, yai_dic
             )
@@ -736,7 +766,7 @@ def send_yao(
                 sleep_fn(WHATSAPP_SLEEP_SECONDS)
 
         threema_message = message
-        if group["yao_message"] and yao_dic and threema_message and not match_start:
+        if group["yao_message"] and yao_dic and threema_message and not match_start and not correction:
             threema_message = append_yao_threema(
                 threema_message, group_name, yao_dic
             )
@@ -995,12 +1025,12 @@ def check_report_period(
 
 
 def apply_goal_update(debug, state, update, send_yao_fn=None, update_match_fn=None):
-    """Store a one-goal increment and notify groups."""
+    """Store a one-goal increment or apply a one-goal correction."""
     send_yao_fn = send_yao_fn or send_yao
     update_match_fn = update_match_fn or update_match
     if state.result == update.score:
         return False
-    if not is_single_goal_increment(state.result, update.score):
+    if not is_single_goal_change(state.result, update.score):
         old_home, old_guest = split_score(state.result)
         print_debug(
             debug,
@@ -1011,6 +1041,20 @@ def apply_goal_update(debug, state, update, send_yao_fn=None, update_match_fn=No
         return False
 
     print_debug(debug, "score {0} (old: {1}) looks good".format(update.score, state.result))
+    if is_single_goal_decrement(state.result, update.score):
+        delete_goal(state.match_id, state.result)
+        update_match_fn(state.match_id, result=update.score)
+        send_yao_fn(
+            None,
+            update.home_score,
+            update.guest_score,
+            state.match_id,
+            None,
+            correction=True,
+            old_score=state.result,
+        )
+        return True
+
     goal_data = ""
     if update.score != "0:0" and update.scorer_name:
         goal_data = store_goal(

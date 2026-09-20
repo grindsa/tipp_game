@@ -38,7 +38,25 @@ def _state(**overrides):
     return ls.MatchState(**values)
 
 
-def _period_events(goals=None, period2=None):
+def _period_events(goals=None, period2=None, period1_extra=None):
+    period1 = [
+        {"time": 0, "type": "periodStart"},
+        {
+            "time": 0,
+            "type": "goalkeeperChange",
+            "data": {"id": 1, "team": "home"},
+        },
+    ]
+    for goal in goals or []:
+        period1.append(goal)
+    period1.extend(list(period1_extra or []))
+    return {
+        "1": period1,
+        "2": list(period2 or []),
+        "3": [],
+        "overtime": [],
+        "shootout": [],
+    }
     period1 = [
         {"time": 0, "type": "periodStart"},
         {
@@ -145,6 +163,18 @@ class LifeScoreTests(SimpleTestCase):
         self.assertFalse(ls.is_single_goal_increment("0:0", "2:0"))
         self.assertFalse(ls.is_single_goal_increment("1:0", "1:0"))
         self.assertFalse(ls.is_single_goal_increment("2:1", "1:1"))
+
+    def test_is_single_goal_decrement_and_change(self):
+        self.assertTrue(ls.is_single_goal_decrement("2:1", "1:1"))
+        self.assertTrue(ls.is_single_goal_decrement("1:0", "0:0"))
+        self.assertFalse(ls.is_single_goal_decrement("2:1", "0:1"))
+        self.assertTrue(ls.is_single_goal_change("0:0", "1:0"))
+        self.assertTrue(ls.is_single_goal_change("2:1", "1:1"))
+        self.assertFalse(ls.is_single_goal_change("0:0", "2:0"))
+        self.assertEqual(ls.score_change("2:1", "1:1"), (-1, 0))
+
+    def test_build_correction_header(self):
+        self.assertEqual(ls.build_correction_header("2:0", "1:0"), "Korrektur: 2:0 → 1:0\n")
 
     def test_period_label_from_clock(self):
         self.assertEqual(ls.period_label_from_clock("05:12"), "1. Drittel")
@@ -278,6 +308,45 @@ class LifeScoreTests(SimpleTestCase):
         )
         self.assertEqual(updates[-1]["last_ebbticker_id"], 3)
 
+    def test_period_end_from_event_reads_period_end(self):
+        self.assertEqual(
+            ls.period_end_from_event({"type": "periodEnd", "period_key": "1"}),
+            ("1.", "0:00"),
+        )
+        self.assertEqual(
+            ls.period_end_from_event({"type": "periodEnd", "period_key": "2"}),
+            ("2.", "0:00"),
+        )
+        self.assertEqual(
+            ls.period_end_from_event({"type": "periodEnd", "period_key": "overtime"}),
+            ("3.", "0:00"),
+        )
+        self.assertEqual(
+            ls.period_end_from_event({"type": "periodStart", "period_key": "1"}),
+            (None, None),
+        )
+
+    def test_clock_from_game_time_accepts_float_seconds(self):
+        self.assertEqual(ls.clock_from_game_time(1200.0), ("20:00", 20))
+
+    def test_get_score_from_json_reads_period_end(self):
+        payload = _period_events(
+            goals=[_goal_event(27669, 56, "0:1")],
+            period1_extra=[{"time": 1200.0, "type": "periodEnd"}],
+        )
+        result = ls.get_score_from_json(
+            False,
+            9,
+            4396,
+            3,
+            "2:2",
+            fetch_json_fn=lambda _url: payload,
+            update_match_fn=mock.Mock(),
+        )
+        self.assertEqual(result.period_num, "1.")
+        self.assertEqual(result.remaining_time, "0:00")
+        self.assertEqual(result.score, "2:2")
+
     def test_get_score_from_json_reads_period_start_as_period_end(self):
         payload = _period_events(
             goals=[_goal_event(27669, 56, "0:1")],
@@ -347,6 +416,27 @@ class LifeScoreTests(SimpleTestCase):
         )
         self.assertFalse(sent)
         send_yao.assert_not_called()
+
+    def test_apply_goal_update_sends_correction_without_smiley(self):
+        send_yao = mock.Mock()
+        update_match = mock.Mock()
+        update = ls.TickerUpdate(1, 1, None, None, "1:1", None, None)
+        with mock.patch.object(ls, "delete_goal") as delete_goal:
+            with mock.patch.object(ls, "store_goal") as store:
+                sent = ls.apply_goal_update(
+                    False,
+                    _state(result="2:1"),
+                    update,
+                    send_yao_fn=send_yao,
+                    update_match_fn=update_match,
+                )
+        self.assertTrue(sent)
+        store.assert_not_called()
+        delete_goal.assert_called_once_with(9, "2:1")
+        update_match.assert_called_once_with(9, result="1:1")
+        send_yao.assert_called_once_with(
+            None, 1, 1, 9, None, correction=True, old_score="2:1"
+        )
 
     def test_check_report_period_updates_and_alerts(self):
         update_match = mock.Mock()
@@ -566,6 +656,67 @@ class LifeScoreTests(SimpleTestCase):
         self.assertIn("dry-run whatsapp 111:", printed)
         self.assertIn("Das Spiel hat begonnen", printed)
         self.assertIn("dry-run threema DBUF47V8:", printed)
+
+    def test_send_yao_correction_skips_smiley_and_yao(self):
+        class FakeQuerySet(object):
+            def __init__(self, rows):
+                self.rows = list(rows)
+
+            def filter(self, **_kwargs):
+                return self
+
+            def values(self, *_args, **_kwargs):
+                return list(self.rows)
+
+            def values_list(self, *_args, **_kwargs):
+                if _args:
+                    key = _args[0]
+                    return [
+                        row[key] if isinstance(row, dict) else row for row in self.rows
+                    ]
+                return list(self.rows)
+
+        class FakeModel(object):
+            def __init__(self, rows):
+                self.objects = FakeQuerySet(rows)
+
+        wa_send = mock.Mock()
+        output = io.StringIO()
+        with redirect_stdout(output):
+            ls.send_yao(
+                None,
+                1,
+                1,
+                9,
+                None,
+                correction=True,
+                old_score="2:1",
+                settings_obj=SETTINGS,
+                group_model=FakeModel(
+                    [
+                        {
+                            "number": "111",
+                            "group_id": 1,
+                            "group__name": "tipp",
+                            "yao_message": True,
+                            "alert": True,
+                        }
+                    ]
+                ),
+                user_model=FakeModel([{"username": "alice", "id": 1}]),
+                usersetting_model=FakeModel([]),
+                tip_model=FakeModel([{"user_id": 1, "user__username": "alice", "tip": "1:0"}]),
+                wa_send_fn=wa_send,
+                threema_send_fn=mock.Mock(),
+                sleep_fn=mock.Mock(),
+                dry_run=True,
+            )
+        printed = output.getvalue()
+        self.assertIn("Korrektur: 2:1 → 1:1", printed)
+        self.assertNotIn("raus", printed)
+        self.assertNotIn("wieder im Rennen", printed)
+        self.assertNotIn("\U0001f604", printed)
+        self.assertNotIn("Tor:", printed)
 
     def test_send_yao_reroute_sends_to_admin_number(self):
         class FakeQuerySet(object):
