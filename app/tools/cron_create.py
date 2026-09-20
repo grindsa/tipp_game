@@ -62,6 +62,7 @@ MESSENGER_STOP_AFTER_SECONDS = 16200
 DEFAULT_DELAPPHELPER_VOLUME = (
     "/srv/data/tipp_game/delapphelper.cfg:/app/tools/delapphelper.cfg:ro"
 )
+DEFAULT_LIFE_SCORE_LOG = "/srv/data/tipp_game/logs/life_score.log"
 
 EXIT_SUCCESS = 0
 EXIT_RUNTIME_ERROR = 1
@@ -106,15 +107,24 @@ def insert_compose_run_opts(prefix, run_opts):
     return " ".join(parts)
 
 
-def build_command(script_path, extra_args="", mount_delapp_cfg=False):
+def build_command(script_path, extra_args="", mount_delapp_cfg=False, log_path=""):
     """Build command string for generated cron entries."""
     prefix = os.environ.get("CRON_EXECUTION_PREFIX", "").strip()
     suffix = (" " + extra_args.strip()) if extra_args else ""
     if mount_delapp_cfg:
         prefix = insert_compose_run_opts(prefix, resolve_delapphelper_run_opts())
     if prefix:
-        return "{0} {1}{2}".format(prefix, script_path, suffix)
-    return "{0}{1}".format(script_path, suffix)
+        command = "{0} {1}{2}".format(prefix, script_path, suffix)
+    else:
+        command = "{0}{1}".format(script_path, suffix)
+    return append_stdout_redirect(command, log_path)
+
+
+def append_stdout_redirect(command, log_path):
+    """Append a host-side stdout/stderr redirect for cron troubleshooting."""
+    if not log_path:
+        return command
+    return "{0} >> {1} 2>&1".format(command, log_path)
 
 
 def resolve_dry_run(cli_args):
@@ -151,10 +161,17 @@ def _env_flag(name):
     return os.environ.get(name, "").strip().lower() in ("1", "true", "yes", "on")
 
 
+def resolve_life_score_log_path():
+    """Return the host log file for life_score.py, or empty to disable."""
+    if "CRON_LIFE_SCORE_LOG" in os.environ:
+        return os.environ.get("CRON_LIFE_SCORE_LOG", "").strip()
+    return DEFAULT_LIFE_SCORE_LOG
+
+
 def resolve_life_score_args():
     """Build optional life_score.py flags from environment."""
     args = []
-    if _env_flag("CRON_LIFE_SCORE_DEBUG"):
+    if _env_flag("CRON_LIFE_SCORE_DEBUG") or resolve_life_score_log_path():
         args.append("--debug")
     if _env_flag("CRON_LIFE_SCORE_FAKE_BREAKTR"):
         args.append("--fake-breaktr")
@@ -247,12 +264,15 @@ def create_job(cron, command, comment):
 
 
 def create_script_job(
-    cron, script_dir, script_name, comment, extra_args="", mount_delapp_cfg=False
+    cron, script_dir, script_name, comment, extra_args="", mount_delapp_cfg=False, log_path=""
 ):
     """Create a cron job for a script in the tools directory."""
     script_path = os.path.join(script_dir, script_name)
     command = build_command(
-        script_path, extra_args, mount_delapp_cfg=mount_delapp_cfg
+        script_path,
+        extra_args,
+        mount_delapp_cfg=mount_delapp_cfg,
+        log_path=log_path,
     )
     return create_job(cron, command, comment)
 
@@ -515,10 +535,11 @@ def add_match_jobs(cron, script_dir, match_date, match_id, tzone):
         SCRIPT_LIFE_SCORE,
         COMMENT_LIVE_SCORE,
         extra_args=resolve_life_score_args(),
+        log_path=resolve_life_score_log_path(),
     )
     live.hour.on(summary_hour)
     live.hour.during(summary_hour, summary_hour + 3)
-    live.minute.every(1)
+    live.minute.every(2)
 
     pumpup = create_script_job(
         cron,

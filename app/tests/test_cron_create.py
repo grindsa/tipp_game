@@ -168,7 +168,11 @@ class CronCreateTests(SimpleTestCase):
 
         live = [job for job in jobs if job.comment == cron_create.COMMENT_LIVE_SCORE]
         self.assertEqual(len(live), 1)
-        self.assertEqual(live[0].command, "/app/tools/life_score.py")
+        self.assertEqual(
+            live[0].command,
+            "/app/tools/life_score.py --debug >> /srv/data/tipp_game/logs/life_score.log 2>&1",
+        )
+        live[0].minute.every.assert_called_once_with(2)
 
         lineup = [job for job in jobs if job.comment == cron_create.COMMENT_GET_LINEUP]
         self.assertEqual(len(lineup), 1)
@@ -265,7 +269,7 @@ class CronCreateTests(SimpleTestCase):
         )
         self.assertEqual(
             commands[cron_create.COMMENT_LIVE_SCORE],
-            prefix + " /app/tools/life_score.py",
+            prefix + " /app/tools/life_score.py --debug >> /srv/data/tipp_game/logs/life_score.log 2>&1",
         )
         self.assertNotIn("get_delgames.py", " ".join(commands.values()))
         self.assertNotIn(volume, commands["create input for tag cloud"])
@@ -328,7 +332,12 @@ class CronCreateTests(SimpleTestCase):
     def test_resolve_life_score_args_from_env(self):
         with mock.patch.dict(
             os.environ,
-            {"CRON_LIFE_SCORE_DEBUG": "", "CRON_LIFE_SCORE_FAKE_BREAKTR": "", "CRON_LIFE_SCORE_DRY_RUN": ""},
+            {
+                "CRON_LIFE_SCORE_DEBUG": "",
+                "CRON_LIFE_SCORE_FAKE_BREAKTR": "",
+                "CRON_LIFE_SCORE_DRY_RUN": "",
+                "CRON_LIFE_SCORE_LOG": "",
+            },
             clear=False,
         ):
             self.assertEqual(cron_create.resolve_life_score_args(), "")
@@ -338,6 +347,7 @@ class CronCreateTests(SimpleTestCase):
                 "CRON_LIFE_SCORE_DEBUG": "true",
                 "CRON_LIFE_SCORE_FAKE_BREAKTR": "1",
                 "CRON_LIFE_SCORE_DRY_RUN": "true",
+                "CRON_LIFE_SCORE_LOG": "",
             },
             clear=False,
         ):
@@ -345,6 +355,29 @@ class CronCreateTests(SimpleTestCase):
                 cron_create.resolve_life_score_args(),
                 "--debug --fake-breaktr --dry-run",
             )
+
+    def test_resolve_life_score_log_path_defaults_and_can_be_disabled(self):
+        with mock.patch.dict(os.environ, {}, clear=False):
+            os.environ.pop("CRON_LIFE_SCORE_LOG", None)
+            self.assertEqual(
+                cron_create.resolve_life_score_log_path(),
+                "/srv/data/tipp_game/logs/life_score.log",
+            )
+        with mock.patch.dict(os.environ, {"CRON_LIFE_SCORE_LOG": ""}, clear=False):
+            self.assertEqual(cron_create.resolve_life_score_log_path(), "")
+        with mock.patch.dict(
+            os.environ, {"CRON_LIFE_SCORE_LOG": "/tmp/life_score.log"}, clear=False
+        ):
+            self.assertEqual(
+                cron_create.resolve_life_score_log_path(), "/tmp/life_score.log"
+            )
+
+    def test_append_stdout_redirect(self):
+        self.assertEqual(cron_create.append_stdout_redirect("cmd", ""), "cmd")
+        self.assertEqual(
+            cron_create.append_stdout_redirect("cmd", "/tmp/out.log"),
+            "cmd >> /tmp/out.log 2>&1",
+        )
 
     def test_add_match_jobs_passes_life_score_flags(self):
         jobs = []
@@ -389,7 +422,9 @@ class CronCreateTests(SimpleTestCase):
         self.assertEqual(len(live), 1)
         self.assertEqual(
             live[0].command,
-            prefix + " /app/tools/life_score.py --debug --fake-breaktr",
+            prefix
+            + " /app/tools/life_score.py --debug --fake-breaktr"
+            + " >> /srv/data/tipp_game/logs/life_score.log 2>&1",
         )
 
     def test_resolve_lineup_args_from_env(self):
