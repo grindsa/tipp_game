@@ -295,7 +295,17 @@ LOGGING = {
 }
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+# Project assets live in app/static/. Production collectstatic writes into that
+# same tree (Docker volume). Local runserver uses staticfiles finders, which
+# intentionally skip STATIC_ROOT — so in development expose app/static via
+# STATICFILES_DIRS and use a separate collectstatic target.
+_STATIC_DIR = os.path.join(BASE_DIR, 'static')
+if IS_PRODUCTION:
+    STATIC_ROOT = _STATIC_DIR
+    STATICFILES_DIRS = []
+else:
+    STATICFILES_DIRS = [_STATIC_DIR]
+    STATIC_ROOT = os.path.join(BASE_DIR, 'static_collected')
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 

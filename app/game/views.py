@@ -3,6 +3,7 @@
 # pylint: disable=C0302
 from __future__ import absolute_import
 import datetime
+import random
 import time
 from pytz import timezone
 from django.shortcuts import render
@@ -14,7 +15,7 @@ from django.contrib.auth import models
 from django.contrib.auth.models import User, Group
 from django.db.models import Q
 from game.models import Team, Delmatch, Match, Tip, Referee, Presence, Refpermatch, Usersetting, Season, Groupsetting, Ranking, Featurerequest, Ehcevent, Lineup
-from game.myfunctions import get_u_data, get_last_match, get_next_match, check_tv_alert, get_tipstats, get_sleep_counter, get_matches, get_team_id, get_winloss, get_score, get_special_ranking
+from game.myfunctions import get_u_data, get_last_match, get_next_match, get_closest_match, check_tv_alert, get_tipstats, get_sleep_counter, get_matches, get_team_id, get_winloss, get_score, get_special_ranking
 from game.myfunctions import get_ranking_per_season, create_mytip_chart, create_ranking_chart, get_match_chart, get_single_referee_stats, get_next_del_match, get_user_settings
 from game.myfunctions import get_ftipstats, get_tipdistribution, get_ref_stats, get_penalties_per_match, sort_dic, get_single_user_settings, xls_to_response, ics_to_response, create_rfilter_list
 from game.myfunctions import create_kye_charts, collect_team_statistic, shorten_lineup, get_visitor_stats, check_for_ipv6, get_ranking, filter_ranking, validate_tip
@@ -2195,6 +2196,62 @@ def playofftree(request):
         'season_next': season_next,
         'playoff_series_list': playoff_series_list,
         'title': 'Playoffbaum {0}'.format(season_name)})
+
+
+def ticket(request):
+    """ AXS-style mobile ticket page """
+    if not request.user.is_authenticated:
+        return HttpResponseRedirect('%s?next=%s' % (settings.LOGIN_URL, request.path))
+
+    (u_season_id, _season_list, _group_filter, _user_groups, dsgvo_ack) = get_u_data(request)
+    if not dsgvo_ack:
+        return HttpResponseRedirect('%s?next=%s' % ('/game/dgsvo', request.path))
+
+    uts = int(time.time())
+    (match_id, match_date, home_name, guest_name, home_logo) = get_closest_match(uts, u_season_id)
+
+    match_title = 'No upcoming match'
+    match_subtitle = 'GMT+2 | Uber Aren'
+    doors_open = '--:--'
+    if match_id and match_date:
+        match_dt = datetime.datetime.fromtimestamp(int(match_date), tz=TIMEZONE)
+        match_title = '{0} vs. {1}'.format(home_name, guest_name)
+        weekdays = ('MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN')
+        months = ('Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec')
+        match_subtitle = '{0}, {1} {2}, {3} - {4} GMT+2 | Uber Aren'.format(
+            weekdays[match_dt.weekday()],
+            months[match_dt.month - 1],
+            match_dt.day,
+            match_dt.year,
+            match_dt.strftime('%H:%M'),
+        )
+        doors_dt = datetime.datetime.fromtimestamp(int(match_date) - 90 * 60, tz=TIMEZONE)
+        doors_open = doors_dt.strftime('%H:%M')
+
+    first = (request.user.first_name or '').strip()
+    last = (request.user.last_name or '').strip()
+    if first or last:
+        display_name = '{0} {1}'.format(first, last).strip()
+    else:
+        display_name = request.user.username
+
+    ticket_id = request.session.get('ticket_id')
+    if not ticket_id:
+        ticket_id = random.randint(530, 1530)
+        request.session['ticket_id'] = ticket_id
+
+    return render(request, 'game/ticket.html', {
+        'title': 'Ticket',
+        'match_title': match_title,
+        'match_subtitle': match_subtitle,
+        'display_name': display_name,
+        'ticket_id': ticket_id,
+        'doors_open': doors_open,
+        'home_logo': home_logo or '',
+        'venue_name': 'Uber Arena',
+        'venue_address': 'Uber Platz 1, Berlin, Germany 10243',
+    })
 
 
 def error_404(request, exception, _template_name='game/error_404.html'):

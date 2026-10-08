@@ -42,4 +42,5 @@ urlpatterns = [
     re_path(r'^slideshow',views.slideshow,name='slideshow'),
     re_path(r'^dgsvo',views.dgsvo,name='dgsvo'),
     re_path(r'^playofftree', views.playofftree, name='playofftree'),
+    re_path(r'^ticket$', views.ticket, name='ticket'),
 ]

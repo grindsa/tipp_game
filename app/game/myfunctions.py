@@ -161,6 +161,26 @@ def get_next_match(uts, season_id):
     return(match_id, mdate, tvm)
 
 
+def get_closest_match(uts, season_id):
+    """ return match id and date closest to uts for the given season """
+    match_list = list(
+        Match.objects.filter(season_id=season_id).order_by('date', 'matchday').values(
+            'id', 'date', 'home_team__team_name', 'guest_team__team_name', 'home_team__logo_url'
+        )
+    )
+    if not match_list:
+        return (None, None, None, None, None)
+
+    closest = min(match_list, key=lambda m: abs(int(m['date']) - int(uts)))
+    return (
+        closest['id'],
+        closest['date'],
+        closest['home_team__team_name'],
+        closest['guest_team__team_name'],
+        closest['home_team__logo_url'],
+    )
+
+
 # get next match
 def get_next_del_match(uts, season_id):
     """ get next del match """
