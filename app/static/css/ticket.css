@@ -131,19 +131,19 @@ html, body {
 }
 
 .qr-row {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
   margin-bottom: 16px;
 }
 
 .qr-frame {
   position: relative;
-  width: 220px;
-  height: 220px;
-  border-radius: 18px;
-  padding: 10px;
+  width: 178px;
+  height: 178px;
+  border-radius: 14px;
+  padding: 8px;
   background: #fff;
 }
 
@@ -192,11 +192,15 @@ html, body {
 
 .qr-inner img,
 .qr-inner canvas {
-  width: 190px !important;
-  height: 190px !important;
+  width: 154px !important;
+  height: 154px !important;
 }
 
 .qr-refresh {
+  position: absolute;
+  left: calc(50% + 89px + 8px);
+  top: 50%;
+  transform: translateY(-50%);
   width: 36px;
   height: 36px;
   border: none;
@@ -206,7 +210,6 @@ html, body {
   cursor: pointer;
   padding: 0;
   line-height: 1;
-  align-self: center;
 }
 
 .qr-refresh:active {
